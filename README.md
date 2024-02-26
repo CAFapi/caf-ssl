@@ -1,3 +1,3 @@
-# caf-dropwizard
+# caf-ssl
 
-This project provides utility code for projects using Dropwizard.
+This project provides SSL utility code.
