@@ -33,15 +33,6 @@
         <dependency>
             <groupId>io.dropwizard</groupId>
             <artifactId>dropwizard-core</artifactId>
-            <exclusions>
-                <!-- Excluding this due to the following error:
-                     Found duplicate and different classes in [com.sun.activation:jakarta.activation:2.0.1, jakarta.activation:jakarta.activation-api:2.1.0]
-                 -->
-                <exclusion>
-                    <groupId>com.sun.activation</groupId>
-                    <artifactId>jakarta.activation</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.dropwizard</groupId>

@@ -50,6 +50,11 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>jakarta.xml.bind</groupId>
+                <artifactId>jakarta.xml.bind-api</artifactId>
+                <version>4.0.1</version>
+            </dependency>
+            <dependency>
                 <groupId>io.dropwizard</groupId>
                 <artifactId>dropwizard-core</artifactId>
                 <version>4.0.6</version>
