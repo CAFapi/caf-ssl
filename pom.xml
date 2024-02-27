@@ -20,26 +20,43 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.github.cafapi.ssl</groupId>
-    <artifactId>caf-ssl</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
-    <modules>
-        <module>caf-ssl-dropwizard</module>
-    </modules>
-    <packaging>pom</packaging>
-
+    
     <parent>
         <groupId>com.github.cafapi</groupId>
         <artifactId>caf-common-parent</artifactId>
         <version>5.0.0-431</version>
     </parent>
+
+    <groupId>com.github.cafapi.ssl</groupId>
+    <artifactId>caf-ssl</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
     
+    <name>CAF SSL Modules</name>
+    <description>CAF SSL Modules</description>
+    <url>https://github.com/CAFapi/caf-ssl</url>
+
     <inceptionYear>2024</inceptionYear>
 
-    <properties>
-        <copyrightYear>2024</copyrightYear>
-        <copyrightNotice>Copyright ${copyrightYear} Open Text.</copyrightNotice>
-    </properties>
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>dermot-hardy</id>
+            <name>Dermot Hardy</name>
+            <email>dhardy2@opentext.com</email>
+        </developer>
+        <developer>
+            <id>rorytorneymf</id>
+            <name>Rory Torney</name>
+            <email>rtorney@opentext.com</email>
+        </developer>
+    </developers>
 
     <scm>
         <connection>scm:git:https://github.com/CAFapi/caf-ssl.git</connection>
@@ -47,13 +64,17 @@
         <url>https://github.com/CAFapi/caf-ssl</url>
     </scm>
 
+    <modules>
+        <module>caf-ssl-dropwizard</module>
+    </modules>
+
+    <properties>
+        <copyrightYear>2024</copyrightYear>
+        <copyrightNotice>Copyright ${copyrightYear} Open Text.</copyrightNotice>
+    </properties>
+    
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>jakarta.xml.bind</groupId>
-                <artifactId>jakarta.xml.bind-api</artifactId>
-                <version>4.0.1</version>
-            </dependency>
             <dependency>
                 <groupId>io.dropwizard</groupId>
                 <artifactId>dropwizard-core</artifactId>
@@ -63,6 +84,11 @@
                 <groupId>io.dropwizard</groupId>
                 <artifactId>dropwizard-jetty</artifactId>
                 <version>4.0.6</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.xml.bind</groupId>
+                <artifactId>jakarta.xml.bind-api</artifactId>
+                <version>4.0.1</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
