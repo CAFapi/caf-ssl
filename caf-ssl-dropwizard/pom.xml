@@ -22,7 +22,7 @@
     <parent>
         <groupId>com.github.cafapi.ssl</groupId>
         <artifactId>caf-ssl</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>1.0.0-13</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
