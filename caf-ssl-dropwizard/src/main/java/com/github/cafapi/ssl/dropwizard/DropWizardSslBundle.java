@@ -21,8 +21,12 @@ import io.dropwizard.core.server.DefaultServerFactory;
 import io.dropwizard.core.setup.Environment;
 import io.dropwizard.jetty.ConnectorFactory;
 import io.dropwizard.jetty.HttpsConnectorFactory;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.hpe.caf.secret.SecretUtil;
 
 enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
 {
@@ -30,12 +34,23 @@ enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
 
     private static final String SSL_KEYSTORE_PATH = System.getenv("SSL_KEYSTORE_PATH");
     private static final String SSL_KEYSTORE = System.getenv("SSL_KEYSTORE");
-    private static final String SSL_KEYSTORE_PASSWORD = System.getenv("SSL_KEYSTORE_PASSWORD");
+    private static final String SSL_KEYSTORE_PASSWORD;
+
+    static {
+        try {
+            SSL_KEYSTORE_PASSWORD = SecretUtil.getSecret("SSL_KEYSTORE_PASSWORD");
+        } catch (final IOException e) {
+            throw new RuntimeException("Unable to get secret for key 'SSL_KEYSTORE_PASSWORD'",  e);
+        }
+    }
+
     private static final String SSL_CERT_ALIAS = System.getenv("SSL_CERT_ALIAS");
     private static final String SSL_KEYSTORE_TYPE = System.getenv("SSL_KEYSTORE_TYPE");
     private static final String SSL_VALIDATE_CERTS = System.getenv("SSL_VALIDATE_CERTS");
     private static final String SSL_DISABLE_SNI_HOST_CHECK = System.getenv("SSL_DISABLE_SNI_HOST_CHECK");
     private static final String HTTPS_PORT = System.getenv("HTTPS_PORT");
+
+
 
     @Override
     public void run(final Configuration configuration, final Environment environment) throws Exception
