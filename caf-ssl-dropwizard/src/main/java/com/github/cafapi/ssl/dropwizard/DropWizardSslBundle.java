@@ -15,18 +15,15 @@
  */
 package com.github.cafapi.ssl.dropwizard;
 
+import com.hpe.caf.secret.SecretUtil;
 import io.dropwizard.core.Configuration;
 import io.dropwizard.core.ConfiguredBundle;
 import io.dropwizard.core.server.DefaultServerFactory;
 import io.dropwizard.core.setup.Environment;
 import io.dropwizard.jetty.ConnectorFactory;
 import io.dropwizard.jetty.HttpsConnectorFactory;
-
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.hpe.caf.secret.SecretUtil;
 
 enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
 {
@@ -34,16 +31,6 @@ enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
 
     private static final String SSL_KEYSTORE_PATH = System.getenv("SSL_KEYSTORE_PATH");
     private static final String SSL_KEYSTORE = System.getenv("SSL_KEYSTORE");
-    private static final String SSL_KEYSTORE_PASSWORD;
-
-    static {
-        try {
-            SSL_KEYSTORE_PASSWORD = SecretUtil.getSecret("SSL_KEYSTORE_PASSWORD");
-        } catch (final IOException e) {
-            throw new RuntimeException("Unable to get secret for key 'SSL_KEYSTORE_PASSWORD'",  e);
-        }
-    }
-
     private static final String SSL_CERT_ALIAS = System.getenv("SSL_CERT_ALIAS");
     private static final String SSL_KEYSTORE_TYPE = System.getenv("SSL_KEYSTORE_TYPE");
     private static final String SSL_VALIDATE_CERTS = System.getenv("SSL_VALIDATE_CERTS");
@@ -53,7 +40,9 @@ enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
     @Override
     public void run(final Configuration configuration, final Environment environment) throws Exception
     {
-        if (!isHttpsEnabled()) {
+        final String sslKeystorePassword = SecretUtil.getSecret("SSL_KEYSTORE_PASSWORD");
+
+        if (!isHttpsEnabled(sslKeystorePassword)) {
             return;
         }
 
@@ -61,7 +50,7 @@ enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
 
         httpsConnectorFactory.setPort(isNotNullOrEmpty(HTTPS_PORT) ? Integer.parseInt(HTTPS_PORT) : 8443);
         httpsConnectorFactory.setKeyStorePath(SSL_KEYSTORE_PATH + "/" + SSL_KEYSTORE);
-        httpsConnectorFactory.setKeyStorePassword(SSL_KEYSTORE_PASSWORD);
+        httpsConnectorFactory.setKeyStorePassword(sslKeystorePassword);
         httpsConnectorFactory.setKeyStoreType(isNotNullOrEmpty(SSL_KEYSTORE_TYPE) ? SSL_KEYSTORE_TYPE : "JKS");
         httpsConnectorFactory.setCertAlias(SSL_CERT_ALIAS);
         httpsConnectorFactory.setValidateCerts(
@@ -82,11 +71,11 @@ enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
         }
     }
 
-    private static boolean isHttpsEnabled()
+    private static boolean isHttpsEnabled(final String sslKeystorePassword)
     {
         return isNotNullOrEmpty(SSL_KEYSTORE_PATH)
             && isNotNullOrEmpty(SSL_KEYSTORE)
-            && isNotNullOrEmpty(SSL_KEYSTORE_PASSWORD)
+            && isNotNullOrEmpty(sslKeystorePassword)
             && isNotNullOrEmpty(SSL_CERT_ALIAS);
     }
 
