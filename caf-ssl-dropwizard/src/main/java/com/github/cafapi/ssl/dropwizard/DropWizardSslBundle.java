@@ -50,8 +50,6 @@ enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
     private static final String SSL_DISABLE_SNI_HOST_CHECK = System.getenv("SSL_DISABLE_SNI_HOST_CHECK");
     private static final String HTTPS_PORT = System.getenv("HTTPS_PORT");
 
-
-
     @Override
     public void run(final Configuration configuration, final Environment environment) throws Exception
     {
