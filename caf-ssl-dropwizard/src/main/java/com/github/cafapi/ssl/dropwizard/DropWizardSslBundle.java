@@ -15,7 +15,7 @@
  */
 package com.github.cafapi.ssl.dropwizard;
 
-import com.hpe.caf.secret.SecretUtil;
+import com.github.cafapi.common.util.secret.SecretUtil;
 import io.dropwizard.core.Configuration;
 import io.dropwizard.core.ConfiguredBundle;
 import io.dropwizard.core.server.DefaultServerFactory;
