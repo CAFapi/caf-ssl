@@ -27,6 +27,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>caf-ssl-dropwizard</artifactId>
+    <name>caf-ssl-dropwizard</name>
 
     <dependencies>
         <dependency>
