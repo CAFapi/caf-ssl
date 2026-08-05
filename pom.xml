@@ -94,6 +94,16 @@
                 <artifactId>jakarta.xml.bind-api</artifactId>
                 <version>4.0.1</version>
             </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>1.85</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bctls-jdk18on</artifactId>
+                <version>1.85</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

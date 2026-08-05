@@ -22,8 +22,11 @@ import io.dropwizard.core.server.DefaultServerFactory;
 import io.dropwizard.core.setup.Environment;
 import io.dropwizard.jetty.ConnectorFactory;
 import io.dropwizard.jetty.HttpsConnectorFactory;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 
 enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
 {
@@ -36,6 +39,13 @@ enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
     private static final String SSL_VALIDATE_CERTS = System.getenv("SSL_VALIDATE_CERTS");
     private static final String SSL_DISABLE_SNI_HOST_CHECK = System.getenv("SSL_DISABLE_SNI_HOST_CHECK");
     private static final String HTTPS_PORT = System.getenv("HTTPS_PORT");
+    private static final boolean PQC_ENABLED = "true".equalsIgnoreCase(System.getenv("PQC_ENABLED"));
+
+    static {
+        if (PQC_ENABLED) {
+            registerPqcProviders();
+        }
+    }
 
     @Override
     public void run(final Configuration configuration, final Environment environment) throws Exception
@@ -60,6 +70,10 @@ enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
             isNotNullOrEmpty(SSL_DISABLE_SNI_HOST_CHECK)
             && Boolean.parseBoolean(SSL_DISABLE_SNI_HOST_CHECK));
 
+        if (PQC_ENABLED) {
+            httpsConnectorFactory.setJceProvider(BouncyCastleJsseProvider.PROVIDER_NAME);
+        }
+
         final DefaultServerFactory serverFactory = (DefaultServerFactory) configuration.getServerFactory();
         final List<ConnectorFactory> applicationConnectors = serverFactory.getApplicationConnectors();
         try {
@@ -82,5 +96,12 @@ enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
     private static boolean isNotNullOrEmpty(final String value)
     {
         return value != null && !value.isEmpty();
+    }
+
+    private static void registerPqcProviders()
+    {
+        final BouncyCastleProvider bcProvider = new BouncyCastleProvider();
+        Security.addProvider(bcProvider);
+        Security.addProvider(new BouncyCastleJsseProvider(bcProvider));
     }
 }
