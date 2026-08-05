@@ -39,7 +39,7 @@ enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
     private static final String SSL_VALIDATE_CERTS = System.getenv("SSL_VALIDATE_CERTS");
     private static final String SSL_DISABLE_SNI_HOST_CHECK = System.getenv("SSL_DISABLE_SNI_HOST_CHECK");
     private static final String HTTPS_PORT = System.getenv("HTTPS_PORT");
-    private static final boolean PQC_ENABLED = "true".equalsIgnoreCase(System.getenv("PQC_ENABLED"));
+    private static final boolean PQC_ENABLED = !"false".equalsIgnoreCase(System.getenv("PQC_ENABLED"));
 
     static {
         if (PQC_ENABLED) {
