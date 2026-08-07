@@ -48,3 +48,8 @@ Finally, add the following environment variables:
 - `SSL_VALIDATE_CERTS `: Optional. This property configures whether to validate certs. Defaults to **false**.
 - `SSL_DISABLE_SNI_HOST_CHECK`: Optional. This property configures whether to disable the SNI host check. Defaults to **false**.
 - `HTTPS_PORT`: Optional. This property configures the port for the HTTPS server. Defaults to **8443**.
+- `SSL_JCE_PROVIDER_POLICY`: Optional. Controls TLS JCE provider selection strategy. Defaults to **UseBouncyCastleIfNeededForPqc**.
+  Supported values:
+  - **UseBouncyCastle**: Always register Bouncy Castle providers and configure BCJSSE for HTTPS.
+  - **UseBouncyCastleIfNeededForPqc**: Register Bouncy Castle only when PQC support is not already available from the runtime.
+  - **UseJvmDefault**: Do not register Bouncy Castle providers; use JVM defaults.

@@ -39,17 +39,21 @@ enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
     private static final String SSL_VALIDATE_CERTS = System.getenv("SSL_VALIDATE_CERTS");
     private static final String SSL_DISABLE_SNI_HOST_CHECK = System.getenv("SSL_DISABLE_SNI_HOST_CHECK");
     private static final String HTTPS_PORT = System.getenv("HTTPS_PORT");
-    private static final boolean PQC_ENABLED = !"false".equalsIgnoreCase(System.getenv("PQC_ENABLED"));
-
-    static {
-        if (PQC_ENABLED) {
-            registerPqcProviders();
-        }
-    }
+    private static final String SSL_JCE_PROVIDER_POLICY = System.getenv("SSL_JCE_PROVIDER_POLICY");
+    private static final String POLICY_USE_BOUNCY_CASTLE = "UseBouncyCastle";
+    private static final String POLICY_USE_JVM_DEFAULT = "UseJvmDefault";
+    private static final String JAVA_SPECIFICATION_VERSION = System.getProperty("java.specification.version");
+    private static final int MIN_PQC_JAVA_SPEC_VERSION = 27;
 
     @Override
     public void run(final Configuration configuration, final Environment environment) throws Exception
     {
+        final boolean useBouncyCastle = shouldUseBouncyCastle();
+
+        if (useBouncyCastle) {
+            registerBouncyCastleProviders();
+        }
+
         final String sslKeystorePassword = SecretUtil.getSecret("SSL_KEYSTORE_PASSWORD");
 
         if (!isHttpsEnabled(sslKeystorePassword)) {
@@ -70,7 +74,7 @@ enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
             isNotNullOrEmpty(SSL_DISABLE_SNI_HOST_CHECK)
             && Boolean.parseBoolean(SSL_DISABLE_SNI_HOST_CHECK));
 
-        if (PQC_ENABLED) {
+        if (useBouncyCastle) {
             httpsConnectorFactory.setJceProvider(BouncyCastleJsseProvider.PROVIDER_NAME);
         }
 
@@ -98,10 +102,34 @@ enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
         return value != null && !value.isEmpty();
     }
 
-    private static void registerPqcProviders()
+    private static void registerBouncyCastleProviders()
     {
         final BouncyCastleProvider bcProvider = new BouncyCastleProvider();
         Security.addProvider(bcProvider);
         Security.addProvider(new BouncyCastleJsseProvider(bcProvider));
+    }
+
+    private static boolean shouldUseBouncyCastle()
+    {
+        final String policy = SSL_JCE_PROVIDER_POLICY == null ? null : SSL_JCE_PROVIDER_POLICY.trim();
+
+        if (POLICY_USE_BOUNCY_CASTLE.equalsIgnoreCase(policy)) {
+            return true;
+        }
+
+        if (POLICY_USE_JVM_DEFAULT.equalsIgnoreCase(policy)) {
+            return false;
+        }
+
+        return !isRuntimePqcSupported();
+    }
+
+    private static boolean isRuntimePqcSupported()
+    {
+        try {
+            return Integer.parseInt(JAVA_SPECIFICATION_VERSION) >= MIN_PQC_JAVA_SPEC_VERSION;
+        } catch (final NumberFormatException ex) {
+            return false;
+        }
     }
 }
