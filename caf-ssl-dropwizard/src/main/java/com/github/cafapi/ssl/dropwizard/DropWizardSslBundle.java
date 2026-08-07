@@ -23,6 +23,7 @@ import io.dropwizard.core.setup.Bootstrap;
 import io.dropwizard.core.setup.Environment;
 import io.dropwizard.jetty.ConnectorFactory;
 import io.dropwizard.jetty.HttpsConnectorFactory;
+import java.security.Provider;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,8 +46,7 @@ enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
     private static final String POLICY_USE_BOUNCY_CASTLE = "UseBouncyCastle";
     private static final String POLICY_USE_BOUNCY_CASTLE_IF_NEEDED_FOR_PQC = "UseBouncyCastleIfNeededForPqc";
     private static final String POLICY_USE_JVM_DEFAULT = "UseJvmDefault";
-    private static final String JAVA_SPECIFICATION_VERSION = System.getProperty("java.specification.version");
-    private static final int MIN_PQC_JAVA_SPEC_VERSION = 27;
+    private static final String ML_KEM_768_PROVIDER_FILTER = "KeyPairGenerator.ML-KEM-768";
 
     @Override
     public void initialize(final Bootstrap<?> bootstrap)
@@ -137,10 +137,9 @@ enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
 
     private static boolean isRuntimePqcSupported()
     {
-        try {
-            return Integer.parseInt(JAVA_SPECIFICATION_VERSION) >= MIN_PQC_JAVA_SPEC_VERSION;
-        } catch (final NumberFormatException ex) {
-            return false;
-        }
+        // X25519MLKEM768 is a TLS-layer hybrid group (X25519 + ML-KEM-768) that is not itself
+        // queryable via JCA. X25519 is always available, so ML-KEM-768 is the PQC indicator
+        final Provider[] providers = Security.getProviders(ML_KEM_768_PROVIDER_FILTER);
+        return providers != null && providers.length > 0;
     }
 }
