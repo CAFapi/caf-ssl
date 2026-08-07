@@ -19,6 +19,7 @@ import com.github.cafapi.common.util.secret.SecretUtil;
 import io.dropwizard.core.Configuration;
 import io.dropwizard.core.ConfiguredBundle;
 import io.dropwizard.core.server.DefaultServerFactory;
+import io.dropwizard.core.setup.Bootstrap;
 import io.dropwizard.core.setup.Environment;
 import io.dropwizard.jetty.ConnectorFactory;
 import io.dropwizard.jetty.HttpsConnectorFactory;
@@ -32,6 +33,7 @@ enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
 {
     INSTANCE;
 
+    private boolean useBouncyCastle;
     private static final String SSL_KEYSTORE_PATH = System.getenv("SSL_KEYSTORE_PATH");
     private static final String SSL_KEYSTORE = System.getenv("SSL_KEYSTORE");
     private static final String SSL_CERT_ALIAS = System.getenv("SSL_CERT_ALIAS");
@@ -41,19 +43,24 @@ enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
     private static final String HTTPS_PORT = System.getenv("HTTPS_PORT");
     private static final String SSL_JCE_PROVIDER_POLICY = System.getenv("SSL_JCE_PROVIDER_POLICY");
     private static final String POLICY_USE_BOUNCY_CASTLE = "UseBouncyCastle";
+    private static final String POLICY_USE_BOUNCY_CASTLE_IF_NEEDED_FOR_PQC = "UseBouncyCastleIfNeededForPqc";
     private static final String POLICY_USE_JVM_DEFAULT = "UseJvmDefault";
     private static final String JAVA_SPECIFICATION_VERSION = System.getProperty("java.specification.version");
     private static final int MIN_PQC_JAVA_SPEC_VERSION = 27;
 
     @Override
-    public void run(final Configuration configuration, final Environment environment) throws Exception
+    public void initialize(final Bootstrap<?> bootstrap)
     {
-        final boolean useBouncyCastle = shouldUseBouncyCastle();
+        useBouncyCastle = shouldUseBouncyCastle();
 
         if (useBouncyCastle) {
             registerBouncyCastleProviders();
         }
+    }
 
+    @Override
+    public void run(final Configuration configuration, final Environment environment) throws Exception
+    {
         final String sslKeystorePassword = SecretUtil.getSecret("SSL_KEYSTORE_PASSWORD");
 
         if (!isHttpsEnabled(sslKeystorePassword)) {
@@ -113,6 +120,10 @@ enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
     {
         final String policy = SSL_JCE_PROVIDER_POLICY == null ? null : SSL_JCE_PROVIDER_POLICY.trim();
 
+        if (policy == null || policy.isEmpty() || POLICY_USE_BOUNCY_CASTLE_IF_NEEDED_FOR_PQC.equalsIgnoreCase(policy)) {
+            return !isRuntimePqcSupported();
+        }
+
         if (POLICY_USE_BOUNCY_CASTLE.equalsIgnoreCase(policy)) {
             return true;
         }
@@ -121,7 +132,7 @@ enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
             return false;
         }
 
-        return !isRuntimePqcSupported();
+        throw new IllegalArgumentException("Unknown SSL_JCE_PROVIDER_POLICY value: " + SSL_JCE_PROVIDER_POLICY);
     }
 
     private static boolean isRuntimePqcSupported()
