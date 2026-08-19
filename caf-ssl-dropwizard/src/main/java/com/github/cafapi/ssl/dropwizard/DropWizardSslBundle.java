@@ -153,8 +153,8 @@ enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
             final SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(null, null, null);
 
-            return Arrays.stream(sslContext.getSupportedSSLParameters().getNamedGroups())
-                    .anyMatch(PQC_NAMED_GROUP::equalsIgnoreCase);
+            final String[] namedGroups = sslContext.getSupportedSSLParameters().getNamedGroups();
+            return namedGroups != null && Arrays.stream(namedGroups).anyMatch(PQC_NAMED_GROUP::equalsIgnoreCase);
         } catch (final GeneralSecurityException e) {
             throw new IllegalStateException("Unable to inspect the JVM TLS provider", e);
         }
