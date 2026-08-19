@@ -53,3 +53,33 @@ Finally, add the following environment variables:
   - **UseBouncyCastle**: Always register Bouncy Castle providers and configure BCJSSE for HTTPS.
   - **UseBouncyCastleIfNeededForPqc**: Register Bouncy Castle only when PQC support is not already available from the runtime.
   - **UseJvmDefault**: Do not register Bouncy Castle providers; use JVM defaults.
+
+## caf-ssl-spring
+
+This module enables the `X25519MLKEM768` post-quantum hybrid key exchange on the TLS endpoint of a Spring Boot service.
+It requires no code changes: simply add the dependency and the providers are registered automatically during start-up
+via a Spring Boot `EnvironmentPostProcessor` (discovered through `META-INF/spring.factories`), before the embedded
+servlet container creates its `SSLContext`.
+
+To use, import the dependency into your project:
+
+```
+<dependency>
+    <groupId>com.github.cafapi.ssl</groupId>
+    <artifactId>caf-ssl-spring</artifactId>
+    <version>ENTER_VERSION_HERE</version>
+</dependency>
+```
+
+Provider selection is controlled by the same environment variable as `caf-ssl-dropwizard`:
+
+- `SSL_JCE_PROVIDER_POLICY`: Optional. Controls TLS JCE provider selection strategy. Defaults to **UseBouncyCastleIfNeededForPqc**.
+  Supported values:
+  - **UseBouncyCastle**: Always register Bouncy Castle providers.
+  - **UseBouncyCastleIfNeededForPqc**: Register Bouncy Castle only when PQC support is not already available from the runtime.
+  - **UseJvmDefault**: Do not register Bouncy Castle providers; use JVM defaults.
+
+## caf-ssl-core
+
+This module holds the shared provider-selection and BouncyCastle registration logic used by both
+`caf-ssl-dropwizard` and `caf-ssl-spring`. Services do not depend on it directly.
