@@ -44,7 +44,7 @@ enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
     @Override
     public void initialize(final Bootstrap<?> bootstrap)
     {
-        // BCJSSE is assigned explicitly to the HTTPS connector below, so it does not need highest priority.
+        // Configure TLS providers based on the active SSL_JCE_PROVIDER_POLICY.
         useBouncyCastle = SslProviderConfigurator.configure(false);
     }
 
