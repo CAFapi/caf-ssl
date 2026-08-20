@@ -143,7 +143,9 @@ public final class SslProviderConfigurator
 
     /**
      * Registers the BouncyCastle JCE and JSSE providers. Idempotent: existing providers are reused and not
-     * duplicated.
+     * duplicated. When {@code insertJsseProviderAtHighestPriority} is {@code true}, an already-registered
+     * BCJSSE provider that is not at the top is promoted, so the container's default {@code SSLContext}
+     * always resolves BCJSSE rather than a JVM provider that lacks the PQC group.
      *
      * @param insertJsseProviderAtHighestPriority when {@code true} the JSSE provider is inserted at position 1
      */
@@ -158,13 +160,23 @@ public final class SslProviderConfigurator
             Security.addProvider(bcProvider);
         }
 
-        if (Security.getProvider(BouncyCastleJsseProvider.PROVIDER_NAME) == null) {
+        final Provider existingJsseProvider = Security.getProvider(BouncyCastleJsseProvider.PROVIDER_NAME);
+        if (existingJsseProvider == null) {
             final BouncyCastleJsseProvider jsseProvider = new BouncyCastleJsseProvider(bcProvider);
             if (insertJsseProviderAtHighestPriority) {
                 Security.insertProviderAt(jsseProvider, 1);
             } else {
                 Security.addProvider(jsseProvider);
             }
+        } else if (insertJsseProviderAtHighestPriority && !isHighestPriority(existingJsseProvider)) {
+            Security.removeProvider(existingJsseProvider.getName());
+            Security.insertProviderAt(existingJsseProvider, 1);
         }
+    }
+
+    private static boolean isHighestPriority(final Provider provider)
+    {
+        final Provider[] providers = Security.getProviders();
+        return providers.length > 0 && providers[0] == provider;
     }
 }
