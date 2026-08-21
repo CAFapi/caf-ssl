@@ -21,15 +21,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.math.BigInteger;
+import java.io.InputStream;
 import java.net.InetAddress;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.KeyStore;
 import java.security.Provider;
 import java.security.Security;
-import java.security.cert.X509Certificate;
-import java.util.Date;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
@@ -38,12 +34,8 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
-import javax.security.auth.x500.X500Principal;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
-import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.junit.jupiter.api.Test;
 
 final class SslProviderConfiguratorTest
@@ -180,31 +172,13 @@ final class SslProviderConfiguratorTest
 
     private static SSLContext newBouncyCastleContext() throws Exception
     {
-        final Provider bcProvider = Security.getProvider(BouncyCastleProvider.PROVIDER_NAME);
         final char[] password = "changeit".toCharArray();
 
-        final KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA", bcProvider);
-        keyPairGenerator.initialize(2048);
-        final KeyPair keyPair = keyPairGenerator.generateKeyPair();
-
-        final long now = System.currentTimeMillis();
-        final X500Principal subject = new X500Principal("CN=localhost");
-        final X509Certificate certificate = new JcaX509CertificateConverter()
-                .setProvider(bcProvider)
-                .getCertificate(new JcaX509v3CertificateBuilder(
-                        subject,
-                        BigInteger.valueOf(now),
-                        new Date(now - 86_400_000L),
-                        new Date(now + 86_400_000L),
-                        subject,
-                        keyPair.getPublic())
-                        .build(new JcaContentSignerBuilder("SHA256withRSA")
-                                .setProvider(bcProvider)
-                                .build(keyPair.getPrivate())));
-
+        // Load the pre-generated keystore from test resources
         final KeyStore keyStore = KeyStore.getInstance("PKCS12");
-        keyStore.load(null, null);
-        keyStore.setKeyEntry("pqc", keyPair.getPrivate(), password, new X509Certificate[]{certificate});
+        try (InputStream stream = SslProviderConfiguratorTest.class.getResourceAsStream("/pqc-test.p12")) {
+            keyStore.load(stream, password);
+        }
 
         final KeyManagerFactory keyManagerFactory =
                 KeyManagerFactory.getInstance("PKIX", BouncyCastleJsseProvider.PROVIDER_NAME);
