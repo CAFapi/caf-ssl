@@ -55,4 +55,67 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>prepare-test-keystore-output</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <mkdir dir="${project.build.testOutputDirectory}"/>
+                                <delete file="${project.build.testOutputDirectory}/pqc-test.p12" quiet="true"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.5.1</version>
+                <executions>
+                    <execution>
+                        <id>generate-test-keystore</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>keytool</executable>
+                            <arguments>
+                                <argument>-genkeypair</argument>
+                                <argument>-alias</argument>
+                                <argument>pqc</argument>
+                                <argument>-keyalg</argument>
+                                <argument>RSA</argument>
+                                <argument>-keysize</argument>
+                                <argument>2048</argument>
+                                <argument>-validity</argument>
+                                <argument>365</argument>
+                                <argument>-keystore</argument>
+                                <argument>${project.build.testOutputDirectory}/pqc-test.p12</argument>
+                                <argument>-storetype</argument>
+                                <argument>PKCS12</argument>
+                                <argument>-storepass</argument>
+                                <argument>changeit</argument>
+                                <argument>-keypass</argument>
+                                <argument>changeit</argument>
+                                <argument>-dname</argument>
+                                <argument>CN=localhost</argument>
+                                <argument>-noprompt</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

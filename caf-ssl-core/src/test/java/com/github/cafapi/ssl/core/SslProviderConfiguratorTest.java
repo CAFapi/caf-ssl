@@ -174,7 +174,7 @@ final class SslProviderConfiguratorTest
     {
         final char[] password = "changeit".toCharArray();
 
-        // Load the pre-generated keystore from test resources
+        // Load the build-generated keystore from test resources
         final KeyStore keyStore = KeyStore.getInstance("PKCS12");
         try (InputStream stream = SslProviderConfiguratorTest.class.getResourceAsStream("/pqc-test.p12")) {
             keyStore.load(stream, password);
