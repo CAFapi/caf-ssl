@@ -16,6 +16,7 @@
 package com.github.cafapi.ssl.dropwizard;
 
 import com.github.cafapi.common.util.secret.SecretUtil;
+import com.github.cafapi.ssl.core.SslProviderConfigurator;
 import io.dropwizard.core.Configuration;
 import io.dropwizard.core.ConfiguredBundle;
 import io.dropwizard.core.server.DefaultServerFactory;
@@ -23,11 +24,8 @@ import io.dropwizard.core.setup.Bootstrap;
 import io.dropwizard.core.setup.Environment;
 import io.dropwizard.jetty.ConnectorFactory;
 import io.dropwizard.jetty.HttpsConnectorFactory;
-import java.security.Provider;
-import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 
 enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
@@ -42,20 +40,12 @@ enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
     private static final String SSL_VALIDATE_CERTS = System.getenv("SSL_VALIDATE_CERTS");
     private static final String SSL_DISABLE_SNI_HOST_CHECK = System.getenv("SSL_DISABLE_SNI_HOST_CHECK");
     private static final String HTTPS_PORT = System.getenv("HTTPS_PORT");
-    private static final String SSL_JCE_PROVIDER_POLICY = System.getenv("SSL_JCE_PROVIDER_POLICY");
-    private static final String POLICY_USE_BOUNCY_CASTLE = "UseBouncyCastle";
-    private static final String POLICY_USE_BOUNCY_CASTLE_IF_NEEDED_FOR_PQC = "UseBouncyCastleIfNeededForPqc";
-    private static final String POLICY_USE_JVM_DEFAULT = "UseJvmDefault";
-    private static final String ML_KEM_768_PROVIDER_FILTER = "KeyPairGenerator.ML-KEM-768";
 
     @Override
     public void initialize(final Bootstrap<?> bootstrap)
     {
-        useBouncyCastle = shouldUseBouncyCastle();
-
-        if (useBouncyCastle) {
-            registerBouncyCastleProviders();
-        }
+        // Configure TLS providers based on the active SSL_JCE_PROVIDER_POLICY.
+        useBouncyCastle = SslProviderConfigurator.configure(false);
     }
 
     @Override
@@ -107,39 +97,5 @@ enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
     private static boolean isNotNullOrEmpty(final String value)
     {
         return value != null && !value.isEmpty();
-    }
-
-    private static void registerBouncyCastleProviders()
-    {
-        final BouncyCastleProvider bcProvider = new BouncyCastleProvider();
-        Security.addProvider(bcProvider);
-        Security.addProvider(new BouncyCastleJsseProvider(bcProvider));
-    }
-
-    private static boolean shouldUseBouncyCastle()
-    {
-        final String policy = SSL_JCE_PROVIDER_POLICY == null ? null : SSL_JCE_PROVIDER_POLICY.trim();
-
-        if (policy == null || policy.isEmpty() || POLICY_USE_BOUNCY_CASTLE_IF_NEEDED_FOR_PQC.equalsIgnoreCase(policy)) {
-            return !isRuntimePqcSupported();
-        }
-
-        if (POLICY_USE_BOUNCY_CASTLE.equalsIgnoreCase(policy)) {
-            return true;
-        }
-
-        if (POLICY_USE_JVM_DEFAULT.equalsIgnoreCase(policy)) {
-            return false;
-        }
-
-        throw new IllegalArgumentException("Unknown SSL_JCE_PROVIDER_POLICY value: " + SSL_JCE_PROVIDER_POLICY);
-    }
-
-    private static boolean isRuntimePqcSupported()
-    {
-        // X25519MLKEM768 is a TLS-layer hybrid group (X25519 + ML-KEM-768) that is not itself
-        // queryable via JCA. X25519 is always available, so ML-KEM-768 is the PQC indicator
-        final Provider[] providers = Security.getProviders(ML_KEM_768_PROVIDER_FILTER);
-        return providers != null && providers.length > 0;
     }
 }
