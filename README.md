@@ -79,7 +79,16 @@ Provider selection is controlled by the same environment variable as `caf-ssl-dr
   - **UseBouncyCastleIfNeededForPqc**: Register Bouncy Castle only when PQC support is not already available from the runtime.
   - **UseJvmDefault**: Do not register Bouncy Castle providers; use JVM defaults.
 
+
+TLS ciphers: caf-ssl-spring sets approved suites by default.
+
+You can also override it at runtime:
+```powershell
+$env:SERVER_SSL_CIPHERS="TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384"
+```
+
 ## caf-ssl-core
 
 This module holds the shared provider-selection and BouncyCastle registration logic used by both
 `caf-ssl-dropwizard` and `caf-ssl-spring`. Services do not depend on it directly.
+

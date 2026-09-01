@@ -1,4 +1,4 @@
-#
+﻿#
 # Copyright 2024-2026 Open Text.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,3 +16,4 @@
 
 org.springframework.boot.EnvironmentPostProcessor=\
 com.github.cafapi.ssl.spring.PqcTlsEnvironmentPostProcessor
+org.springframework.boot.env.EnvironmentPostProcessor=com.github.cafapi.ssl.spring.PqcTlsEnvironmentPostProcessor,com.github.cafapi.ssl.spring.TlsCipherSuiteEnvironmentPostProcessor
