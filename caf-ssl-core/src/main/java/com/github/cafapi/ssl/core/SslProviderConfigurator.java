@@ -19,6 +19,7 @@ import java.security.GeneralSecurityException;
 import java.security.Provider;
 import java.security.Security;
 import java.util.Arrays;
+import java.util.List;
 import javax.net.ssl.SSLContext;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
@@ -51,17 +52,19 @@ public final class SslProviderConfigurator
      */
     public static final String SSL_JCE_PROVIDER_POLICY_ENV = "SSL_JCE_PROVIDER_POLICY";
 
-    /** Approved TLS cipher suites*/
-    public static final String APPROVED_TLS_CIPHER_SUITES =
-            "TLS_AES_128_GCM_SHA256,"
-                    + "TLS_AES_256_GCM_SHA384,"
-                    + "TLS_CHACHA20_POLY1305_SHA256,"
-                    + "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,"
-                    + "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,"
-                    + "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,"
-                    + "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,"
-                    + "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,"
-                    + "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256";
+    /** Approved TLS cipher suites. */
+    public static final String APPROVED_TLS_CIPHER_SUITES = String.join(",",
+            List.of(
+                    "TLS_AES_128_GCM_SHA256",
+                    "TLS_AES_256_GCM_SHA384",
+                    "TLS_CHACHA20_POLY1305_SHA256",
+                    "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+                    "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+                    "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+                    "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
+                    "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+                    "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256"
+            ));
 
     static final String POLICY_USE_BOUNCY_CASTLE = "UseBouncyCastle";
     static final String POLICY_USE_BOUNCY_CASTLE_IF_NEEDED_FOR_PQC = "UseBouncyCastleIfNeededForPqc";
