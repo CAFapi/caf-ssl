@@ -74,6 +74,17 @@
         <copyrightYear>2026</copyrightYear>
         <maven.compiler.release>25</maven.compiler.release>
     </properties>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>3.11.0</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
     
     <dependencyManagement>
         <dependencies>
