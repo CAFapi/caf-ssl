@@ -91,4 +91,3 @@ $env:SERVER_SSL_CIPHERS="TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384"
 
 This module holds the shared provider-selection and BouncyCastle registration logic used by both
 `caf-ssl-dropwizard` and `caf-ssl-spring`. Services do not depend on it directly.
-

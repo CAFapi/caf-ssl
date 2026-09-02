@@ -52,7 +52,13 @@ public final class SslProviderConfigurator
      */
     public static final String SSL_JCE_PROVIDER_POLICY_ENV = "SSL_JCE_PROVIDER_POLICY";
 
-    /** Approved TLS cipher suites. */
+    /**
+     * The environment variable that overrides the default approved TLS cipher suite list. Value is a
+     * comma-separated list of cipher suite names, for example {@code TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384}.
+     */
+    public static final String SERVER_SSL_CIPHERS_ENV = "SERVER_SSL_CIPHERS";
+
+    /** Approved TLS cipher suites used when {@value #SERVER_SSL_CIPHERS_ENV} is not set. */
     public static final String APPROVED_TLS_CIPHER_SUITES = String.join(",",
             List.of(
                     "TLS_AES_128_GCM_SHA256",
@@ -95,6 +101,17 @@ public final class SslProviderConfigurator
             LOGGER.info("caf-ssl: using JVM default TLS providers");
         }
         return useBouncyCastle;
+    }
+
+    /**
+     * Resolves the approved TLS cipher suite list, honouring {@value #SERVER_SSL_CIPHERS_ENV} when set.
+     *
+     * @return a comma-separated list of TLS cipher suite names
+     */
+    public static String resolveApprovedCipherSuites()
+    {
+        final String override = System.getenv(SERVER_SSL_CIPHERS_ENV);
+        return (override == null || override.isBlank()) ? APPROVED_TLS_CIPHER_SUITES : override.trim();
     }
 
     /**
