@@ -72,6 +72,7 @@
 
     <properties>
         <copyrightYear>2026</copyrightYear>
+        <maven.compiler.release>25</maven.compiler.release>
     </properties>
     
     <dependencyManagement>
