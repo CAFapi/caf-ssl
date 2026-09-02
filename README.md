@@ -84,7 +84,7 @@ TLS ciphers: caf-ssl-spring sets approved suites by default.
 
 You can also override it at runtime:
 ```powershell
-$env:SERVER_SSL_CIPHERS="TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384"
+$env:CAF_SSL_CIPHER_SUITES="TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384"
 ```
 
 ## caf-ssl-core

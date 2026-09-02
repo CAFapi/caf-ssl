@@ -56,9 +56,9 @@ public final class SslProviderConfigurator
      * The environment variable that overrides the default approved TLS cipher suite list. Value is a
      * comma-separated list of cipher suite names, for example {@code TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384}.
      */
-    public static final String SERVER_SSL_CIPHERS_ENV = "SERVER_SSL_CIPHERS";
+    public static final String CAF_SSL_CIPHER_SUITES_ENV = "CAF_SSL_CIPHER_SUITES";
 
-    /** Approved TLS cipher suites used when {@value #SERVER_SSL_CIPHERS_ENV} is not set. */
+    /** Approved TLS cipher suites used when {@value #CAF_SSL_CIPHER_SUITES_ENV} is not set. */
     public static final String APPROVED_TLS_CIPHER_SUITES = String.join(",",
             List.of(
                     "TLS_AES_128_GCM_SHA256",
@@ -104,13 +104,13 @@ public final class SslProviderConfigurator
     }
 
     /**
-     * Resolves the approved TLS cipher suite list, honouring {@value #SERVER_SSL_CIPHERS_ENV} when set.
+     * Resolves the approved TLS cipher suite list, honouring {@value #CAF_SSL_CIPHER_SUITES_ENV} when set.
      *
      * @return a comma-separated list of TLS cipher suite names
      */
     public static String resolveApprovedCipherSuites()
     {
-        final String override = System.getenv(SERVER_SSL_CIPHERS_ENV);
+        final String override = System.getenv(CAF_SSL_CIPHER_SUITES_ENV);
         return (override == null || override.isBlank()) ? APPROVED_TLS_CIPHER_SUITES : override.trim();
     }
 

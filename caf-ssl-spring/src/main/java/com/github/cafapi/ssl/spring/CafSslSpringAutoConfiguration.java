@@ -16,6 +16,7 @@
 package com.github.cafapi.ssl.spring;
 
 import com.github.cafapi.ssl.core.SslProviderConfigurator;
+import org.apache.catalina.connector.Connector;
 import org.springframework.boot.tomcat.servlet.TomcatServletWebServerFactory;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -25,15 +26,26 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class CafSslSpringAutoConfiguration
 {
+    /**
+     * Applies the configured TLS cipher suite list to Tomcat SSL host configs on both pre-added
+     * additional connectors and connectors customized during factory startup.
+     */
     @Bean
     public WebServerFactoryCustomizer<TomcatServletWebServerFactory> cafSslTomcatCipherCustomizer()
     {
-        return factory -> factory.addConnectorCustomizers(connector -> {
-            for (final var sslHostConfig : connector.findSslHostConfigs()) {
-                if (sslHostConfig.getCiphers() == null || sslHostConfig.getCiphers().isEmpty()) {
-                    sslHostConfig.setCiphers(SslProviderConfigurator.resolveApprovedCipherSuites());
+        return factory -> {
+            final String configuredCiphers = SslProviderConfigurator.resolveApprovedCipherSuites();
+            for (final Connector connector : factory.getAdditionalConnectors()) {
+                connector.findSslHostConfigs();
+                for (final var sslHostConfig : connector.findSslHostConfigs()) {
+                    sslHostConfig.setCiphers(configuredCiphers);
                 }
             }
-        });
+            factory.addConnectorCustomizers(connector -> {
+                for (final var sslHostConfig : connector.findSslHostConfigs()) {
+                    sslHostConfig.setCiphers(configuredCiphers);
+                }
+            });
+        };
     }
 }
