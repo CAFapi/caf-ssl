@@ -4,7 +4,7 @@
 ${version-number}
 
 #### New Features
-- **D1217166**: Add support for approved TLS cipher suites in Spring configuration.
+- **1217166**: Add support for approved TLS cipher suites in Spring configuration.
 
 #### Known Issues
 - None
