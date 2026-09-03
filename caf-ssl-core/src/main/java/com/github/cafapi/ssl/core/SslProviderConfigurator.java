@@ -19,6 +19,7 @@ import java.security.GeneralSecurityException;
 import java.security.Provider;
 import java.security.Security;
 import java.util.Arrays;
+import java.util.List;
 import javax.net.ssl.SSLContext;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
@@ -51,6 +52,26 @@ public final class SslProviderConfigurator
      */
     public static final String SSL_JCE_PROVIDER_POLICY_ENV = "SSL_JCE_PROVIDER_POLICY";
 
+    /**
+     * The environment variable that overrides the default approved TLS cipher suite list. Value is a
+     * comma-separated list of cipher suite names, for example {@code TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384}.
+     */
+    public static final String CAF_SSL_CIPHER_SUITES_ENV = "CAF_SSL_CIPHER_SUITES";
+
+    /** Approved TLS cipher suites used when {@value #CAF_SSL_CIPHER_SUITES_ENV} is not set. */
+    public static final String APPROVED_TLS_CIPHER_SUITES = String.join(",",
+            List.of(
+                    "TLS_AES_128_GCM_SHA256",
+                    "TLS_AES_256_GCM_SHA384",
+                    "TLS_CHACHA20_POLY1305_SHA256",
+                    "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+                    "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+                    "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+                    "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
+                    "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+                    "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256"
+            ));
+
     static final String POLICY_USE_BOUNCY_CASTLE = "UseBouncyCastle";
     static final String POLICY_USE_BOUNCY_CASTLE_IF_NEEDED_FOR_PQC = "UseBouncyCastleIfNeededForPqc";
     static final String POLICY_USE_JVM_DEFAULT = "UseJvmDefault";
@@ -80,6 +101,17 @@ public final class SslProviderConfigurator
             LOGGER.info("caf-ssl: using JVM default TLS providers");
         }
         return useBouncyCastle;
+    }
+
+    /**
+     * Resolves the approved TLS cipher suite list, honouring {@value #CAF_SSL_CIPHER_SUITES_ENV} when set.
+     *
+     * @return a comma-separated list of TLS cipher suite names
+     */
+    public static String resolveApprovedCipherSuites()
+    {
+        final String override = System.getenv(CAF_SSL_CIPHER_SUITES_ENV);
+        return (override == null || override.isBlank()) ? APPROVED_TLS_CIPHER_SUITES : override.trim();
     }
 
     /**
