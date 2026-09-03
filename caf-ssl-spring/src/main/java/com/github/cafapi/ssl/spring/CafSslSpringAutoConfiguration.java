@@ -24,7 +24,7 @@ import org.springframework.context.annotation.Configuration;
 
 /** Auto-configuration that registers caf-ssl Spring beans. */
 @Configuration
-public final class CafSslSpringAutoConfiguration
+public class CafSslSpringAutoConfiguration
 {
     /**
      * Applies the configured TLS cipher suite list to Tomcat SSL host configs on both pre-added
