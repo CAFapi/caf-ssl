@@ -198,11 +198,12 @@ public final class SslProviderConfigurator
         }
 
         try {
-            return Files.exists(LINUX_FIPS_FLAG_FILE)
-                    && "1".equals(Files.readString(LINUX_FIPS_FLAG_FILE).trim());
-        } catch (final Exception e) {
-            LOGGER.warn("caf-ssl: unable to read {}; assuming FIPS is not enabled", LINUX_FIPS_FLAG_FILE, e);
+            return "1".equals(Files.readString(LINUX_FIPS_FLAG_FILE).trim());
+        } catch (final java.nio.file.NoSuchFileException e) {
             return false;
+        } catch (final Exception e) {
+            LOGGER.warn("caf-ssl: unable to read {}; assuming FIPS is enabled", LINUX_FIPS_FLAG_FILE, e);
+            return true;
         }
     }
 
