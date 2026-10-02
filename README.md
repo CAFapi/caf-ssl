@@ -48,11 +48,7 @@ Finally, add the following environment variables:
 - `SSL_VALIDATE_CERTS `: Optional. This property configures whether to validate certs. Defaults to **false**.
 - `SSL_DISABLE_SNI_HOST_CHECK`: Optional. This property configures whether to disable the SNI host check. Defaults to **false**.
 - `HTTPS_PORT`: Optional. This property configures the port for the HTTPS server. Defaults to **8443**.
-- `SSL_JCE_PROVIDER_POLICY`: Optional. Controls TLS JCE provider selection strategy. Defaults to **UseBouncyCastleIfNeededForPqc**.
-  Supported values:
-  - **UseBouncyCastle**: Always register Bouncy Castle providers and configure BCJSSE for HTTPS.
-  - **UseBouncyCastleIfNeededForPqc**: Register Bouncy Castle only when PQC support is not already available from the runtime.
-  - **UseJvmDefault**: Do not register Bouncy Castle providers; use JVM defaults.
+- `SSL_JCE_PROVIDER_POLICY`: Optional. Controls TLS JCE provider selection strategy. See [SSL_JCE_PROVIDER_POLICY](#ssl_jce_provider_policy) below.
 
 ## caf-ssl-spring
 
@@ -73,12 +69,7 @@ To use, import the dependency into your project:
 
 Provider selection is controlled by the same environment variable as `caf-ssl-dropwizard`:
 
-- `SSL_JCE_PROVIDER_POLICY`: Optional. Controls TLS JCE provider selection strategy. Defaults to **UseBouncyCastleIfNeededForPqc**.
-  Supported values:
-  - **UseBouncyCastle**: Always register Bouncy Castle providers.
-  - **UseBouncyCastleIfNeededForPqc**: Register Bouncy Castle only when PQC support is not already available from the runtime.
-  - **UseJvmDefault**: Do not register Bouncy Castle providers; use JVM defaults.
-
+- `SSL_JCE_PROVIDER_POLICY`: Optional. Controls TLS JCE provider selection strategy. See [SSL_JCE_PROVIDER_POLICY](#ssl_jce_provider_policy) below.
 
 TLS ciphers: caf-ssl-spring sets approved suites by default.
 
@@ -91,3 +82,17 @@ $env:CAF_SSL_CIPHER_SUITES="TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384"
 
 This module holds the shared provider-selection and BouncyCastle registration logic used by both
 `caf-ssl-dropwizard` and `caf-ssl-spring`. Services do not depend on it directly.
+
+## SSL_JCE_PROVIDER_POLICY
+
+Both `caf-ssl-dropwizard` and `caf-ssl-spring` are controlled by the same `SSL_JCE_PROVIDER_POLICY` environment
+variable, which selects the TLS JCE provider strategy. Optional; defaults to **UseBouncyCastleIfNeededForPqc**.
+Supported values:
+
+- **UseBouncyCastle**: Always register Bouncy Castle providers (and, for `caf-ssl-dropwizard`, configure BCJSSE for HTTPS).
+- **UseBouncyCastleIfNeededForPqc**: Register Bouncy Castle only when PQC support is not already available from the runtime.
+- **UseJvmDefault**: Do not register Bouncy Castle providers; use JVM defaults.
+
+FIPS and PQC are mutually exclusive: if the JVM is detected to be running in FIPS mode, the default and
+**UseBouncyCastleIfNeededForPqc** policies automatically behave as **UseJvmDefault** instead of registering
+Bouncy Castle. No extra configuration is needed for this; an explicit **UseBouncyCastle** value still wins.

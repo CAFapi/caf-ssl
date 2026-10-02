@@ -34,7 +34,6 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.junit.jupiter.api.Test;
 
@@ -43,48 +42,69 @@ final class SslProviderConfiguratorTest
     @Test
     void useBouncyCastlePolicyAlwaysRegisters()
     {
-        assertTrue(SslProviderConfigurator.shouldUseBouncyCastle("UseBouncyCastle", true));
-        assertTrue(SslProviderConfigurator.shouldUseBouncyCastle("UseBouncyCastle", false));
+        assertTrue(SslProviderConfigurator.shouldUseBouncyCastle("UseBouncyCastle", true, false));
+        assertTrue(SslProviderConfigurator.shouldUseBouncyCastle("UseBouncyCastle", false, false));
     }
 
     @Test
     void useJvmDefaultPolicyNeverRegisters()
     {
-        assertFalse(SslProviderConfigurator.shouldUseBouncyCastle("UseJvmDefault", true));
-        assertFalse(SslProviderConfigurator.shouldUseBouncyCastle("UseJvmDefault", false));
+        assertFalse(SslProviderConfigurator.shouldUseBouncyCastle("UseJvmDefault", true, false));
+        assertFalse(SslProviderConfigurator.shouldUseBouncyCastle("UseJvmDefault", false, false));
     }
 
     @Test
     void ifNeededPolicyFollowsRuntimeSupport()
     {
-        assertFalse(SslProviderConfigurator.shouldUseBouncyCastle("UseBouncyCastleIfNeededForPqc", true));
-        assertTrue(SslProviderConfigurator.shouldUseBouncyCastle("UseBouncyCastleIfNeededForPqc", false));
+        assertFalse(SslProviderConfigurator.shouldUseBouncyCastle("UseBouncyCastleIfNeededForPqc", true, false));
+        assertTrue(SslProviderConfigurator.shouldUseBouncyCastle("UseBouncyCastleIfNeededForPqc", false, false));
     }
 
     @Test
     void nullEmptyAndBlankDefaultToIfNeeded()
     {
-        assertFalse(SslProviderConfigurator.shouldUseBouncyCastle(null, true));
-        assertTrue(SslProviderConfigurator.shouldUseBouncyCastle(null, false));
-        assertTrue(SslProviderConfigurator.shouldUseBouncyCastle("", false));
-        assertFalse(SslProviderConfigurator.shouldUseBouncyCastle("", true));
-        assertTrue(SslProviderConfigurator.shouldUseBouncyCastle("   ", false));
-        assertFalse(SslProviderConfigurator.shouldUseBouncyCastle("   ", true));
+        assertFalse(SslProviderConfigurator.shouldUseBouncyCastle(null, true, false));
+        assertTrue(SslProviderConfigurator.shouldUseBouncyCastle(null, false, false));
+        assertTrue(SslProviderConfigurator.shouldUseBouncyCastle("", false, false));
+        assertFalse(SslProviderConfigurator.shouldUseBouncyCastle("", true, false));
+        assertTrue(SslProviderConfigurator.shouldUseBouncyCastle("   ", false, false));
+        assertFalse(SslProviderConfigurator.shouldUseBouncyCastle("   ", true, false));
     }
 
     @Test
     void policyMatchingIsCaseInsensitiveAndTrimmed()
     {
-        assertTrue(SslProviderConfigurator.shouldUseBouncyCastle("  usebouncycastle  ", false));
-        assertFalse(SslProviderConfigurator.shouldUseBouncyCastle("USEJVMDEFAULT", true));
-        assertFalse(SslProviderConfigurator.shouldUseBouncyCastle("  usebouncycastleifneededforpqc  ", true));
+        assertTrue(SslProviderConfigurator.shouldUseBouncyCastle("  usebouncycastle  ", false, false));
+        assertFalse(SslProviderConfigurator.shouldUseBouncyCastle("USEJVMDEFAULT", true, false));
+        assertFalse(SslProviderConfigurator.shouldUseBouncyCastle("  usebouncycastleifneededforpqc  ", true, false));
     }
 
     @Test
     void unknownPolicyThrows()
     {
         assertThrows(IllegalArgumentException.class,
-                () -> SslProviderConfigurator.shouldUseBouncyCastle("Nonsense", false));
+                () -> SslProviderConfigurator.shouldUseBouncyCastle("Nonsense", false, false));
+    }
+
+    @Test
+    void fipsEnabledOverridesDefaultAndIfNeededPolicies()
+    {
+        assertFalse(SslProviderConfigurator.shouldUseBouncyCastle(null, false, true));
+        assertFalse(SslProviderConfigurator.shouldUseBouncyCastle("UseBouncyCastleIfNeededForPqc", false, true));
+    }
+
+    @Test
+    void fipsEnabledDoesNotOverrideExplicitPolicies()
+    {
+        assertTrue(SslProviderConfigurator.shouldUseBouncyCastle("UseBouncyCastle", false, true));
+        assertFalse(SslProviderConfigurator.shouldUseBouncyCastle("UseJvmDefault", true, true));
+    }
+
+    @Test
+    void isFipsEnabledNeverThrows()
+    {
+        // Fail-safe contract: probing for FIPS mode must never abort startup.
+        SslProviderConfigurator.isFipsEnabled();
     }
 
     @Test
