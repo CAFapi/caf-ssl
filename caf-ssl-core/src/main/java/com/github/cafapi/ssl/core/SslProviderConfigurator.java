@@ -104,8 +104,7 @@ public final class SslProviderConfigurator
      */
     public static boolean configure(final boolean insertJsseProviderAtHighestPriority)
     {
-        final boolean useBouncyCastle = shouldUseBouncyCastle(
-                System.getenv(SSL_JCE_PROVIDER_POLICY_ENV), isRuntimePqcSupported(), isFipsEnabled());
+        final boolean useBouncyCastle = shouldUseBouncyCastle(System.getenv(SSL_JCE_PROVIDER_POLICY_ENV));
         if (useBouncyCastle) {
             registerBouncyCastleProviders(insertJsseProviderAtHighestPriority);
             LOGGER.info("caf-ssl: registered BouncyCastle providers for PQC TLS ({})", PQC_NAMED_GROUP);
