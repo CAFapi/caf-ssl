@@ -15,6 +15,9 @@
  */
 package com.github.cafapi.ssl.core;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
@@ -36,15 +39,13 @@ import org.slf4j.LoggerFactory;
  * <p>The behaviour is driven by the {@value #SSL_JCE_PROVIDER_POLICY_ENV} environment variable:</p>
  * <ul>
  *   <li>{@code UseBouncyCastleIfNeededForPqc} (default) - register BouncyCastle only when the JVM's own
- *       TLS stack cannot negotiate the PQC hybrid group, and only when the JVM is not running in FIPS mode.</li>
+ *       TLS stack cannot negotiate the PQC hybrid group.</li>
  *   <li>{@code UseBouncyCastle} - always register BouncyCastle.</li>
  *   <li>{@code UseJvmDefault} - never register BouncyCastle; rely on the JVM's default providers.</li>
  * </ul>
  *
- * <p>FIPS and PQC are mutually exclusive: BouncyCastle's PQC support is not FIPS-certified, so the default
- * and {@code UseBouncyCastleIfNeededForPqc} policies fall back to JVM defaults when the host is detected to be
- * running in FIPS mode (see {@link #isFipsEnabled()}). No extra configuration is required for this; an explicit
- * {@code UseBouncyCastle} policy still overrides it.</p>
+ * <p>When no policy is set, the default falls back to JVM providers if the host is detected to be running in
+ * FIPS mode (see {@link #isFipsEnabled()}). Explicit policies retain their defined behavior.</p>
  *
  * <p>This class carries no Dropwizard or Spring dependency so both bundles can share it.</p>
  */
@@ -86,6 +87,7 @@ public final class SslProviderConfigurator
 
     /** Linux kernel flag consulted to detect FIPS mode. */
     static final Path LINUX_FIPS_FLAG_FILE = Path.of("/proc/sys/crypto/fips_enabled");
+    private static final int MAX_LINUX_FIPS_FLAG_BYTES = 8;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SslProviderConfigurator.class);
 
@@ -149,9 +151,12 @@ public final class SslProviderConfigurator
     {
         final String normalizedPolicy = policy == null ? null : policy.trim();
 
-        if (normalizedPolicy == null || normalizedPolicy.isEmpty()
-                || POLICY_USE_BOUNCY_CASTLE_IF_NEEDED_FOR_PQC.equalsIgnoreCase(normalizedPolicy)) {
+        if (normalizedPolicy == null || normalizedPolicy.isEmpty()) {
             return !fipsEnabled && !runtimePqcSupported;
+        }
+
+        if (POLICY_USE_BOUNCY_CASTLE_IF_NEEDED_FOR_PQC.equalsIgnoreCase(normalizedPolicy)) {
+            return !runtimePqcSupported;
         }
 
         if (POLICY_USE_BOUNCY_CASTLE.equalsIgnoreCase(normalizedPolicy)) {
@@ -189,7 +194,7 @@ public final class SslProviderConfigurator
     /**
      * Detects whether the JVM is running in FIPS mode
      */
-    public static boolean isFipsEnabled()
+    static boolean isFipsEnabled()
     {
         final String osName = System.getProperty("os.name", "");
         if (!osName.toLowerCase(Locale.ROOT).contains("linux")) {
@@ -197,9 +202,20 @@ public final class SslProviderConfigurator
         }
 
         try {
-            return Files.exists(LINUX_FIPS_FLAG_FILE)
-                    && "1".equals(Files.readString(LINUX_FIPS_FLAG_FILE).trim());
-        } catch (final Exception e) {
+            if (!Files.exists(LINUX_FIPS_FLAG_FILE)) {
+                return false;
+            }
+
+            try (InputStream input = Files.newInputStream(LINUX_FIPS_FLAG_FILE)) {
+                final byte[] contents = input.readNBytes(MAX_LINUX_FIPS_FLAG_BYTES + 1);
+                if (contents.length > MAX_LINUX_FIPS_FLAG_BYTES) {
+                    LOGGER.warn("caf-ssl: {} exceeds {} bytes; assuming FIPS is not enabled",
+                            LINUX_FIPS_FLAG_FILE, MAX_LINUX_FIPS_FLAG_BYTES);
+                    return false;
+                }
+                return "1".equals(new String(contents, StandardCharsets.UTF_8).trim());
+            }
+        } catch (final IOException e) {
             LOGGER.warn("caf-ssl: unable to read {}; assuming FIPS is not enabled", LINUX_FIPS_FLAG_FILE, e);
             return false;
         }

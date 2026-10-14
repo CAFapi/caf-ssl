@@ -87,10 +87,10 @@ final class SslProviderConfiguratorTest
     }
 
     @Test
-    void fipsEnabledOverridesDefaultAndIfNeededPolicies()
+    void fipsEnabledOverridesOnlyTheDefaultPolicy()
     {
         assertFalse(SslProviderConfigurator.shouldUseBouncyCastle(null, false, true));
-        assertFalse(SslProviderConfigurator.shouldUseBouncyCastle("UseBouncyCastleIfNeededForPqc", false, true));
+        assertTrue(SslProviderConfigurator.shouldUseBouncyCastle("UseBouncyCastleIfNeededForPqc", false, true));
     }
 
     @Test
