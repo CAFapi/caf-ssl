@@ -15,11 +15,17 @@
  */
 package com.github.cafapi.ssl.core;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.security.Provider;
 import java.security.Security;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import javax.net.ssl.SSLContext;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
@@ -32,11 +38,14 @@ import org.slf4j.LoggerFactory;
  *
  * <p>The behaviour is driven by the {@value #SSL_JCE_PROVIDER_POLICY_ENV} environment variable:</p>
  * <ul>
- *   <li>{@code UseBouncyCastleIfNeededForPqc} (default) - register BouncyCastle only when the JVM's own
+ *   <li>{@code UseBouncyCastleIfNeededForPqc} - register BouncyCastle only when the JVM's own
  *       TLS stack cannot negotiate the PQC hybrid group.</li>
  *   <li>{@code UseBouncyCastle} - always register BouncyCastle.</li>
  *   <li>{@code UseJvmDefault} - never register BouncyCastle; rely on the JVM's default providers.</li>
  * </ul>
+ *
+ * If FIPS mode is enabled then {@code UseJvmDefault} is the default. If it is not enabled then {@code UseBouncyCastleIfNeededForPqc} is
+ * the default. Whether FIPS mode is enabled or not is determined by checking the {@code /proc/sys/crypto/fips_enabled} file.
  *
  * <p>This class carries no Dropwizard or Spring dependency so both bundles can share it.</p>
  */
@@ -75,6 +84,10 @@ public final class SslProviderConfigurator
     static final String POLICY_USE_BOUNCY_CASTLE = "UseBouncyCastle";
     static final String POLICY_USE_BOUNCY_CASTLE_IF_NEEDED_FOR_PQC = "UseBouncyCastleIfNeededForPqc";
     static final String POLICY_USE_JVM_DEFAULT = "UseJvmDefault";
+
+    /** Linux kernel flag consulted to detect FIPS mode. */
+    static final Path LINUX_FIPS_FLAG_FILE = Path.of("/proc/sys/crypto/fips_enabled");
+    private static final int MAX_LINUX_FIPS_FLAG_BYTES = 8;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SslProviderConfigurator.class);
 
@@ -115,14 +128,14 @@ public final class SslProviderConfigurator
     }
 
     /**
-     * Resolves the policy, probing the runtime for PQC support when the policy defers to it.
+     * Resolves the policy, probing the runtime for PQC support and FIPS mode when the policy defers to them.
      *
      * @param policy the raw {@value #SSL_JCE_PROVIDER_POLICY_ENV} value (may be {@code null})
      * @return {@code true} if BouncyCastle should be registered
      */
     public static boolean shouldUseBouncyCastle(final String policy)
     {
-        return shouldUseBouncyCastle(policy, isRuntimePqcSupported());
+        return shouldUseBouncyCastle(policy, isRuntimePqcSupported(), isFipsEnabled());
     }
 
     /**
@@ -130,14 +143,19 @@ public final class SslProviderConfigurator
      *
      * @param policy the raw {@value #SSL_JCE_PROVIDER_POLICY_ENV} value (may be {@code null})
      * @param runtimePqcSupported whether the runtime can already negotiate the PQC hybrid group
+     * @param fipsEnabled whether the host is running in FIPS mode
      * @return {@code true} if BouncyCastle should be registered
      */
-    public static boolean shouldUseBouncyCastle(final String policy, final boolean runtimePqcSupported)
+    public static boolean shouldUseBouncyCastle(final String policy, final boolean runtimePqcSupported,
+            final boolean fipsEnabled)
     {
         final String normalizedPolicy = policy == null ? null : policy.trim();
 
-        if (normalizedPolicy == null || normalizedPolicy.isEmpty()
-                || POLICY_USE_BOUNCY_CASTLE_IF_NEEDED_FOR_PQC.equalsIgnoreCase(normalizedPolicy)) {
+        if (normalizedPolicy == null || normalizedPolicy.isEmpty()) {
+            return !fipsEnabled && !runtimePqcSupported;
+        }
+
+        if (POLICY_USE_BOUNCY_CASTLE_IF_NEEDED_FOR_PQC.equalsIgnoreCase(normalizedPolicy)) {
             return !runtimePqcSupported;
         }
 
@@ -169,6 +187,36 @@ public final class SslProviderConfigurator
             return namedGroups != null && Arrays.stream(namedGroups).anyMatch(PQC_NAMED_GROUP::equalsIgnoreCase);
         } catch (final GeneralSecurityException e) {
             LOGGER.warn("caf-ssl: unable to inspect the JVM TLS provider; assuming PQC is not supported", e);
+            return false;
+        }
+    }
+
+    /**
+     * Detects whether the JVM is running in FIPS mode
+     */
+    static boolean isFipsEnabled()
+    {
+        final String osName = System.getProperty("os.name", "");
+        if (!osName.toLowerCase(Locale.ROOT).contains("linux")) {
+            return false;
+        }
+
+        try {
+            if (!Files.exists(LINUX_FIPS_FLAG_FILE)) {
+                return false;
+            }
+
+            try (final InputStream input = Files.newInputStream(LINUX_FIPS_FLAG_FILE)) {
+                final byte[] contents = input.readNBytes(MAX_LINUX_FIPS_FLAG_BYTES + 1);
+                if (contents.length > MAX_LINUX_FIPS_FLAG_BYTES) {
+                    LOGGER.warn("caf-ssl: {} exceeds {} bytes; assuming FIPS is not enabled",
+                            LINUX_FIPS_FLAG_FILE, MAX_LINUX_FIPS_FLAG_BYTES);
+                    return false;
+                }
+                return "1".equals(new String(contents, StandardCharsets.UTF_8).trim());
+            }
+        } catch (final IOException e) {
+            LOGGER.warn("caf-ssl: unable to read {}; assuming FIPS is not enabled", LINUX_FIPS_FLAG_FILE, e);
             return false;
         }
     }
