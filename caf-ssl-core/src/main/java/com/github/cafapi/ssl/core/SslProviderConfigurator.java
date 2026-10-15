@@ -206,7 +206,7 @@ public final class SslProviderConfigurator
                 return false;
             }
 
-            try (InputStream input = Files.newInputStream(LINUX_FIPS_FLAG_FILE)) {
+            try (final InputStream input = Files.newInputStream(LINUX_FIPS_FLAG_FILE)) {
                 final byte[] contents = input.readNBytes(MAX_LINUX_FIPS_FLAG_BYTES + 1);
                 if (contents.length > MAX_LINUX_FIPS_FLAG_BYTES) {
                     LOGGER.warn("caf-ssl: {} exceeds {} bytes; assuming FIPS is not enabled",
