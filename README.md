@@ -85,14 +85,24 @@ This module holds the shared provider-selection and BouncyCastle registration lo
 
 ## SSL_JCE_PROVIDER_POLICY
 
-Both `caf-ssl-dropwizard` and `caf-ssl-spring` are controlled by the same `SSL_JCE_PROVIDER_POLICY` environment
-variable, which selects the TLS JCE provider strategy. Optional; defaults to **UseBouncyCastleIfNeededForPqc**.
-Supported values:
+Both `caf-ssl-dropwizard` and `caf-ssl-spring` respect the same `SSL_JCE_PROVIDER_POLICY` environment
+variable, which selects the TLS JCE provider strategy.  The variable is optional.
 
+#### Supported values
 - **UseBouncyCastle**: Always register Bouncy Castle providers (and, for `caf-ssl-dropwizard`, configure BCJSSE for HTTPS).
 - **UseBouncyCastleIfNeededForPqc**: Register Bouncy Castle only when PQC support is not already available from the runtime.
 - **UseJvmDefault**: Do not register Bouncy Castle providers; use JVM defaults.
 
-FIPS and PQC are mutually exclusive: if the JVM is detected to be running in FIPS mode, the default and
-**UseBouncyCastleIfNeededForPqc** policies automatically behave as **UseJvmDefault** instead of registering
-Bouncy Castle. No extra configuration is needed for this; an explicit **UseBouncyCastle** value still wins.
+#### Default behaviour
+If the provider policy is not specified then the default behavior depends on whether or not FIPS mode is enabled.
+
+The Bouncy Castle providers are not FIPS-certified so if FIPS mode is enabled then they are not loaded.  The JVM defaults are used in
+this case.  This is the same as the `UseJvmDefault` policy.  It is expected that a FIPS-certified JVM is being used.
+
+If FIPS mode is not enabled then the Bouncy Castle providers are loaded only if they are required for PQC support.  This is the same as
+the `UseBouncyCastleIfNeededForPqc` policy.
+
+At the present time there are no FIPS-certified modules which support PQC so until that changes (which it will) the two are effectively
+mutually exclusive.
+
+Whether or not FIPS-mode is enabled is determined by checking the `/proc/sys/crypto/fips_enabled` file.

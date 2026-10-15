@@ -38,14 +38,14 @@ import org.slf4j.LoggerFactory;
  *
  * <p>The behaviour is driven by the {@value #SSL_JCE_PROVIDER_POLICY_ENV} environment variable:</p>
  * <ul>
- *   <li>{@code UseBouncyCastleIfNeededForPqc} (default) - register BouncyCastle only when the JVM's own
+ *   <li>{@code UseBouncyCastleIfNeededForPqc} - register BouncyCastle only when the JVM's own
  *       TLS stack cannot negotiate the PQC hybrid group.</li>
  *   <li>{@code UseBouncyCastle} - always register BouncyCastle.</li>
  *   <li>{@code UseJvmDefault} - never register BouncyCastle; rely on the JVM's default providers.</li>
  * </ul>
  *
- * <p>When no policy is set, the default falls back to JVM providers if the host is detected to be running in
- * FIPS mode (see {@link #isFipsEnabled()}). Explicit policies retain their defined behavior.</p>
+ * If FIPS mode is enabled then {@code UseJvmDefault} is the default. If it is not enabled then {@code UseBouncyCastleIfNeededForPqc} is
+ * the default. Whether FIPS mode is enabled or not is determined by checking the {@code /proc/sys/crypto/fips_enabled} file.
  *
  * <p>This class carries no Dropwizard or Spring dependency so both bundles can share it.</p>
  */
