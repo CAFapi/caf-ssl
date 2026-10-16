@@ -46,8 +46,8 @@ import org.slf4j.LoggerFactory;
  *   <li>{@code UseJvmDefault} - never register BouncyCastle; rely on the JVM's default providers.</li>
  * </ul>
  *
- * <p>An unset or blank policy has the same behavior as {@code AutoSelect}. FIPS mode is checked using the
- * {@code /proc/sys/crypto/fips_enabled} file.</p>
+ * If FIPS mode is enabled then {@code UseJvmDefault} is the default. If it is not enabled then {@code UseBouncyCastleIfNeededForPqc} is
+ * the default. Whether FIPS mode is enabled or not is determined by checking the {@code /proc/sys/crypto/fips_enabled} file.
  *
  * <p>This class carries no Dropwizard or Spring dependency so both bundles can share it.</p>
  */
