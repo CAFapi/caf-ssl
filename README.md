@@ -89,12 +89,14 @@ Both `caf-ssl-dropwizard` and `caf-ssl-spring` respect the same `SSL_JCE_PROVIDE
 variable, which selects the TLS JCE provider strategy.  The variable is optional.
 
 #### Supported values
+- **AutoSelect** (default): Automatically select the TLS provider.
 - **UseBouncyCastle**: Always register Bouncy Castle providers (and, for `caf-ssl-dropwizard`, configure BCJSSE for HTTPS).
 - **UseBouncyCastleIfNeededForPqc**: Register Bouncy Castle only when PQC support is not already available from the runtime.
 - **UseJvmDefault**: Do not register Bouncy Castle providers; use JVM defaults.
 
 #### Default behaviour
 If the provider policy is not specified then the default behavior depends on whether or not FIPS mode is enabled.
+Selecting `AutoSelect` has the same behavior as leaving the policy unset.
 
 The Bouncy Castle providers are not FIPS-certified so if FIPS mode is enabled then they are not loaded.  The JVM defaults are used in
 this case.  This is the same as the `UseJvmDefault` policy.  It is expected that a FIPS-certified JVM is being used.

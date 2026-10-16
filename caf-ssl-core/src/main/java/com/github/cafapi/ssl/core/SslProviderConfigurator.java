@@ -38,14 +38,16 @@ import org.slf4j.LoggerFactory;
  *
  * <p>The behaviour is driven by the {@value #SSL_JCE_PROVIDER_POLICY_ENV} environment variable:</p>
  * <ul>
+ *   <li>{@code AutoSelect} (default) - register BouncyCastle only when the host is not in FIPS mode and the JVM's
+ *       TLS stack cannot negotiate the PQC hybrid group.</li>
  *   <li>{@code UseBouncyCastleIfNeededForPqc} - register BouncyCastle only when the JVM's own
  *       TLS stack cannot negotiate the PQC hybrid group.</li>
  *   <li>{@code UseBouncyCastle} - always register BouncyCastle.</li>
  *   <li>{@code UseJvmDefault} - never register BouncyCastle; rely on the JVM's default providers.</li>
  * </ul>
  *
- * If FIPS mode is enabled then {@code UseJvmDefault} is the default. If it is not enabled then {@code UseBouncyCastleIfNeededForPqc} is
- * the default. Whether FIPS mode is enabled or not is determined by checking the {@code /proc/sys/crypto/fips_enabled} file.
+ * <p>An unset or blank policy has the same behavior as {@code AutoSelect}. FIPS mode is checked using the
+ * {@code /proc/sys/crypto/fips_enabled} file.</p>
  *
  * <p>This class carries no Dropwizard or Spring dependency so both bundles can share it.</p>
  */
@@ -84,6 +86,7 @@ public final class SslProviderConfigurator
     static final String POLICY_USE_BOUNCY_CASTLE = "UseBouncyCastle";
     static final String POLICY_USE_BOUNCY_CASTLE_IF_NEEDED_FOR_PQC = "UseBouncyCastleIfNeededForPqc";
     static final String POLICY_USE_JVM_DEFAULT = "UseJvmDefault";
+    static final String POLICY_AUTO_SELECT = "AutoSelect";
 
     /** Linux kernel flag consulted to detect FIPS mode. */
     static final Path LINUX_FIPS_FLAG_FILE = Path.of("/proc/sys/crypto/fips_enabled");
@@ -151,7 +154,8 @@ public final class SslProviderConfigurator
     {
         final String normalizedPolicy = policy == null ? null : policy.trim();
 
-        if (normalizedPolicy == null || normalizedPolicy.isEmpty()) {
+        if (normalizedPolicy == null || normalizedPolicy.isEmpty()
+                || POLICY_AUTO_SELECT.equalsIgnoreCase(normalizedPolicy)) {
             return !fipsEnabled && !runtimePqcSupported;
         }
 
