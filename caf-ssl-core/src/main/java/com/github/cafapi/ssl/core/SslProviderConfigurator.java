@@ -83,10 +83,10 @@ public final class SslProviderConfigurator
                     "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256"
             ));
 
+    static final String POLICY_AUTO_SELECT = "AutoSelect";
     static final String POLICY_USE_BOUNCY_CASTLE = "UseBouncyCastle";
     static final String POLICY_USE_BOUNCY_CASTLE_IF_NEEDED_FOR_PQC = "UseBouncyCastleIfNeededForPqc";
     static final String POLICY_USE_JVM_DEFAULT = "UseJvmDefault";
-    static final String POLICY_AUTO_SELECT = "AutoSelect";
 
     /** Linux kernel flag consulted to detect FIPS mode. */
     static final Path LINUX_FIPS_FLAG_FILE = Path.of("/proc/sys/crypto/fips_enabled");
