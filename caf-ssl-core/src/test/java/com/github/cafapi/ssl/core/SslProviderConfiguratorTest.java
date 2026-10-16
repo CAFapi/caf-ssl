@@ -61,7 +61,7 @@ final class SslProviderConfiguratorTest
     }
 
     @Test
-    void nullEmptyAndBlankDefaultToIfNeeded()
+    void nullEmptyAndBlankUseAutomaticPolicy()
     {
         assertFalse(SslProviderConfigurator.shouldUseBouncyCastle(null, true, false));
         assertTrue(SslProviderConfigurator.shouldUseBouncyCastle(null, false, false));
@@ -69,6 +69,21 @@ final class SslProviderConfiguratorTest
         assertFalse(SslProviderConfigurator.shouldUseBouncyCastle("", true, false));
         assertTrue(SslProviderConfigurator.shouldUseBouncyCastle("   ", false, false));
         assertFalse(SslProviderConfigurator.shouldUseBouncyCastle("   ", true, false));
+        assertFalse(SslProviderConfigurator.shouldUseBouncyCastle("", false, true));
+        assertFalse(SslProviderConfigurator.shouldUseBouncyCastle("   ", false, true));
+    }
+
+    @Test
+    void autoSelectMatchesUnsetPolicy()
+    {
+        assertEquals(SslProviderConfigurator.shouldUseBouncyCastle(null, false, false),
+                SslProviderConfigurator.shouldUseBouncyCastle("AutoSelect", false, false));
+        assertEquals(SslProviderConfigurator.shouldUseBouncyCastle(null, true, false),
+                SslProviderConfigurator.shouldUseBouncyCastle(" autoselect ", true, false));
+        assertEquals(SslProviderConfigurator.shouldUseBouncyCastle(null, false, true),
+                SslProviderConfigurator.shouldUseBouncyCastle("AutoSelect", false, true));
+        assertEquals(SslProviderConfigurator.shouldUseBouncyCastle(null, true, true),
+                SslProviderConfigurator.shouldUseBouncyCastle("AutoSelect", true, true));
     }
 
     @Test

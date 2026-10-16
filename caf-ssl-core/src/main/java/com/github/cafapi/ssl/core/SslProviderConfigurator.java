@@ -38,6 +38,8 @@ import org.slf4j.LoggerFactory;
  *
  * <p>The behaviour is driven by the {@value #SSL_JCE_PROVIDER_POLICY_ENV} environment variable:</p>
  * <ul>
+ *   <li>{@code AutoSelect} (default) - register BouncyCastle only when the host is not in FIPS mode and the JVM's
+ *       TLS stack cannot negotiate the PQC hybrid group.</li>
  *   <li>{@code UseBouncyCastleIfNeededForPqc} - register BouncyCastle only when the JVM's own
  *       TLS stack cannot negotiate the PQC hybrid group.</li>
  *   <li>{@code UseBouncyCastle} - always register BouncyCastle.</li>
@@ -81,6 +83,7 @@ public final class SslProviderConfigurator
                     "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256"
             ));
 
+    static final String POLICY_AUTO_SELECT = "AutoSelect";
     static final String POLICY_USE_BOUNCY_CASTLE = "UseBouncyCastle";
     static final String POLICY_USE_BOUNCY_CASTLE_IF_NEEDED_FOR_PQC = "UseBouncyCastleIfNeededForPqc";
     static final String POLICY_USE_JVM_DEFAULT = "UseJvmDefault";
@@ -151,7 +154,8 @@ public final class SslProviderConfigurator
     {
         final String normalizedPolicy = policy == null ? null : policy.trim();
 
-        if (normalizedPolicy == null || normalizedPolicy.isEmpty()) {
+        if (normalizedPolicy == null || normalizedPolicy.isEmpty()
+                || POLICY_AUTO_SELECT.equalsIgnoreCase(normalizedPolicy)) {
             return !fipsEnabled && !runtimePqcSupported;
         }
 
