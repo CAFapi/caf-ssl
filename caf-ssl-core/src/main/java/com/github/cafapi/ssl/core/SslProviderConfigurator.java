@@ -76,11 +76,26 @@ public final class SslProviderConfigurator
                     "TLS_AES_256_GCM_SHA384",
                     "TLS_CHACHA20_POLY1305_SHA256",
                     "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+                    "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
                     "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
                     "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
-                    "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
-                    "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-                    "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256"
+                    "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+                    "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"
+            ));
+
+    /**
+     * The environment variable that overrides the default approved TLS named groups (curves). Value is a
+     * comma-separated list of named group names, for example {@code X25519MLKEM768,X25519}.
+     */
+    public static final String CAF_SSL_NAMED_GROUPS_ENV = "CAF_SSL_NAMED_GROUPS";
+
+    /** Approved TLS named groups (curves) used when {@value #CAF_SSL_NAMED_GROUPS_ENV} is not set. */
+    public static final String APPROVED_TLS_NAMED_GROUPS = String.join(",",
+            List.of(
+                    PQC_NAMED_GROUP,
+                    "X25519",
+                    "secp256r1",
+                    "secp384r1"
             ));
 
     static final String POLICY_AUTO_SELECT = "AutoSelect";
@@ -126,8 +141,52 @@ public final class SslProviderConfigurator
      */
     public static String resolveApprovedCipherSuites()
     {
-        final String override = System.getenv(CAF_SSL_CIPHER_SUITES_ENV);
-        return (override == null || override.isBlank()) ? APPROVED_TLS_CIPHER_SUITES : override.trim();
+        return resolveList(CAF_SSL_CIPHER_SUITES_ENV, System.getenv(CAF_SSL_CIPHER_SUITES_ENV), APPROVED_TLS_CIPHER_SUITES);
+    }
+
+    /**
+     * Resolves the approved TLS named group (curve) list, honouring {@value #CAF_SSL_NAMED_GROUPS_ENV} when set.
+     *
+     * @return a comma-separated list of TLS named group names
+     */
+    public static String resolveApprovedNamedGroups()
+    {
+        return resolveList(CAF_SSL_NAMED_GROUPS_ENV, System.getenv(CAF_SSL_NAMED_GROUPS_ENV), APPROVED_TLS_NAMED_GROUPS);
+    }
+
+    /**
+     * Resolves a comma-separated override list, falling back to {@code defaultValue} when the override is
+     * {@code null}, blank, or contains no usable entries. Blank entries are dropped and duplicates removed;
+     * an override that differs from the default is logged so it shows up in an audit trail, since it
+     * weakens or changes the hardened baseline. Pure function (no env access), so it can be unit tested.
+     *
+     * @param envName the environment variable name the override came from, used only for log messages
+     * @param override the raw override value (may be {@code null})
+     * @param defaultValue the comma-separated default list to fall back to
+     * @return a comma-separated, de-duplicated list of entries
+     */
+    static String resolveList(final String envName, final String override, final String defaultValue)
+    {
+        if (override == null || override.isBlank()) {
+            return defaultValue;
+        }
+
+        final List<String> entries = Arrays.stream(override.split(","))
+                .map(String::trim)
+                .filter(entry -> !entry.isEmpty())
+                .distinct()
+                .toList();
+
+        if (entries.isEmpty()) {
+            LOGGER.warn("caf-ssl: {} contained no usable entries; falling back to the approved default", envName);
+            return defaultValue;
+        }
+
+        final String resolved = String.join(",", entries);
+        if (!resolved.equals(defaultValue)) {
+            LOGGER.warn("caf-ssl: {} overrides the approved default ({} -> {})", envName, defaultValue, resolved);
+        }
+        return resolved;
     }
 
     /**

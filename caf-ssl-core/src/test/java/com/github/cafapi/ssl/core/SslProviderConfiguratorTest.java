@@ -116,6 +116,44 @@ final class SslProviderConfiguratorTest
     }
 
     @Test
+    void resolveApprovedCipherSuitesDefaultsWhenEnvUnset()
+    {
+        assertEquals(SslProviderConfigurator.APPROVED_TLS_CIPHER_SUITES, SslProviderConfigurator.resolveApprovedCipherSuites());
+    }
+
+    @Test
+    void resolveApprovedNamedGroupsDefaultsWhenEnvUnset()
+    {
+        assertEquals(SslProviderConfigurator.APPROVED_TLS_NAMED_GROUPS, SslProviderConfigurator.resolveApprovedNamedGroups());
+    }
+
+    @Test
+    void resolveListFallsBackToDefaultWhenOverrideNullOrBlank()
+    {
+        assertEquals("default", SslProviderConfigurator.resolveList("ENV", null, "default"));
+        assertEquals("default", SslProviderConfigurator.resolveList("ENV", "", "default"));
+        assertEquals("default", SslProviderConfigurator.resolveList("ENV", "   ", "default"));
+    }
+
+    @Test
+    void resolveListFallsBackToDefaultWhenOverrideHasNoUsableEntries()
+    {
+        assertEquals("default", SslProviderConfigurator.resolveList("ENV", " , , ", "default"));
+    }
+
+    @Test
+    void resolveListTrimsDropsBlanksAndDedupesOverride()
+    {
+        assertEquals("A,B", SslProviderConfigurator.resolveList("ENV", " A , B ,A, ,B", "default"));
+    }
+
+    @Test
+    void resolveListReturnsDefaultUnchangedWhenOverrideMatches()
+    {
+        assertEquals("A,B", SslProviderConfigurator.resolveList("ENV", "A,B", "A,B"));
+    }
+
+    @Test
     void isFipsEnabledNeverThrows()
     {
         // Fail-safe contract: probing for FIPS mode must never abort startup.

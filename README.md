@@ -71,11 +71,17 @@ Provider selection is controlled by the same environment variable as `caf-ssl-dr
 
 - `SSL_JCE_PROVIDER_POLICY`: Optional. Controls TLS JCE provider selection strategy. See [SSL_JCE_PROVIDER_POLICY](#ssl_jce_provider_policy) below.
 
-TLS ciphers: caf-ssl-spring sets approved suites by default.
+TLS ciphers: caf-ssl-spring sets approved suites by default, lets the client choose the cipher (server cipher
+order is disabled), and restricts curves to the approved named groups.
 
-You can also override it at runtime:
+You can also override the cipher suites at runtime:
 ```powershell
 $env:CAF_SSL_CIPHER_SUITES="TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384"
+```
+
+Or override the named groups (curves):
+```powershell
+$env:CAF_SSL_NAMED_GROUPS="X25519MLKEM768,X25519"
 ```
 
 ## caf-ssl-core

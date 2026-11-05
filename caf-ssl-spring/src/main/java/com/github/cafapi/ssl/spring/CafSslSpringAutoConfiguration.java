@@ -35,15 +35,21 @@ public class CafSslSpringAutoConfiguration
     {
         return factory -> {
             final String configuredCiphers = SslProviderConfigurator.resolveApprovedCipherSuites();
+            final String configuredGroups = SslProviderConfigurator.resolveApprovedNamedGroups();
             for (final Connector connector : factory.getAdditionalConnectors()) {
                 connector.findSslHostConfigs();
                 for (final var sslHostConfig : connector.findSslHostConfigs()) {
                     sslHostConfig.setCiphers(configuredCiphers);
+                    sslHostConfig.setGroups(configuredGroups);
+                    // Client chooses the cipher, as required by the intermediate TLS profile.
+                    sslHostConfig.setHonorCipherOrder(false);
                 }
             }
             factory.addConnectorCustomizers(connector -> {
                 for (final var sslHostConfig : connector.findSslHostConfigs()) {
                     sslHostConfig.setCiphers(configuredCiphers);
+                    sslHostConfig.setGroups(configuredGroups);
+                    sslHostConfig.setHonorCipherOrder(false);
                 }
             });
         };
