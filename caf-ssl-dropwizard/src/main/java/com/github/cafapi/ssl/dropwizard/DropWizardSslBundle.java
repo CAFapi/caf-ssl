@@ -25,8 +25,10 @@ import io.dropwizard.core.setup.Environment;
 import io.dropwizard.jetty.ConnectorFactory;
 import io.dropwizard.jetty.HttpsConnectorFactory;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
 {
@@ -57,7 +59,17 @@ enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
             return;
         }
 
-        final HttpsConnectorFactory httpsConnectorFactory = new HttpsConnectorFactory();
+        final HttpsConnectorFactory httpsConnectorFactory = new HttpsConnectorFactory()
+        {
+            @Override
+            protected SslContextFactory.Server configureSslContextFactory(final SslContextFactory sslContextFactory)
+            {
+                final SslContextFactory.Server factory = super.configureSslContextFactory(sslContextFactory);
+                // Client chooses the cipher, as required by the intermediate TLS profile.
+                factory.setUseCipherSuitesOrder(false);
+                return factory;
+            }
+        };
 
         httpsConnectorFactory.setPort(isNotNullOrEmpty(HTTPS_PORT) ? Integer.parseInt(HTTPS_PORT) : 8443);
         httpsConnectorFactory.setKeyStorePath(SSL_KEYSTORE_PATH + "/" + SSL_KEYSTORE);
@@ -70,6 +82,9 @@ enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
         httpsConnectorFactory.setDisableSniHostCheck(
             isNotNullOrEmpty(SSL_DISABLE_SNI_HOST_CHECK)
             && Boolean.parseBoolean(SSL_DISABLE_SNI_HOST_CHECK));
+        httpsConnectorFactory.setSupportedProtocols(List.of("TLSv1.2", "TLSv1.3"));
+        httpsConnectorFactory.setSupportedCipherSuites(
+            Arrays.asList(SslProviderConfigurator.resolveApprovedCipherSuites().split(",")));
 
         if (useBouncyCastle) {
             httpsConnectorFactory.setJceProvider(BouncyCastleJsseProvider.PROVIDER_NAME);
