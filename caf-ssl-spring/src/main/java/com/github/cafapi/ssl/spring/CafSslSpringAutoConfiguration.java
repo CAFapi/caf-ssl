@@ -17,6 +17,7 @@ package com.github.cafapi.ssl.spring;
 
 import com.github.cafapi.ssl.core.SslProviderConfigurator;
 import org.apache.catalina.connector.Connector;
+import org.apache.tomcat.util.net.SSLHostConfig;
 import org.springframework.boot.tomcat.servlet.TomcatServletWebServerFactory;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -27,7 +28,7 @@ import org.springframework.context.annotation.Configuration;
 public class CafSslSpringAutoConfiguration
 {
     /**
-     * Applies the configured TLS cipher suite list to Tomcat SSL host configs on both pre-added
+     * Applies the approved TLS cipher suites and named groups, and client cipher preference, to Tomcat SSL host configs on both pre-added
      * additional connectors and connectors customized during factory startup.
      */
     @Bean
@@ -35,17 +36,26 @@ public class CafSslSpringAutoConfiguration
     {
         return factory -> {
             final String configuredCiphers = SslProviderConfigurator.resolveApprovedCipherSuites();
+            final String configuredGroups = SslProviderConfigurator.resolveApprovedNamedGroups();
             for (final Connector connector : factory.getAdditionalConnectors()) {
                 connector.findSslHostConfigs();
                 for (final var sslHostConfig : connector.findSslHostConfigs()) {
-                    sslHostConfig.setCiphers(configuredCiphers);
+                    applyApprovedTlsSettings(sslHostConfig, configuredCiphers, configuredGroups);
                 }
             }
             factory.addConnectorCustomizers(connector -> {
                 for (final var sslHostConfig : connector.findSslHostConfigs()) {
-                    sslHostConfig.setCiphers(configuredCiphers);
+                    applyApprovedTlsSettings(sslHostConfig, configuredCiphers, configuredGroups);
                 }
             });
         };
+    }
+
+    private static void applyApprovedTlsSettings(final SSLHostConfig sslHostConfig, final String ciphers, final String groups)
+    {
+        sslHostConfig.setCiphers(ciphers);
+        sslHostConfig.setGroups(groups);
+        // Client chooses the cipher, as required by the intermediate TLS profile.
+        sslHostConfig.setHonorCipherOrder(false);
     }
 }

@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.InputStream;
 import java.net.InetAddress;
@@ -113,6 +114,46 @@ final class SslProviderConfiguratorTest
     {
         assertTrue(SslProviderConfigurator.shouldUseBouncyCastle("UseBouncyCastle", false, true));
         assertFalse(SslProviderConfigurator.shouldUseBouncyCastle("UseJvmDefault", true, true));
+    }
+
+    @Test
+    void resolveApprovedCipherSuitesDefaultsWhenEnvUnset()
+    {
+        assumeTrue(System.getenv(SslProviderConfigurator.CAF_SSL_CIPHER_SUITES_ENV) == null);
+        assertEquals(SslProviderConfigurator.APPROVED_TLS_CIPHER_SUITES, SslProviderConfigurator.resolveApprovedCipherSuites());
+    }
+
+    @Test
+    void resolveApprovedNamedGroupsDefaultsWhenEnvUnset()
+    {
+        assumeTrue(System.getenv(SslProviderConfigurator.CAF_SSL_NAMED_GROUPS_ENV) == null);
+        assertEquals(SslProviderConfigurator.APPROVED_TLS_NAMED_GROUPS, SslProviderConfigurator.resolveApprovedNamedGroups());
+    }
+
+    @Test
+    void resolveListFallsBackToDefaultWhenOverrideNullOrBlank()
+    {
+        assertEquals("default", SslProviderConfigurator.resolveList("ENV", null, "default"));
+        assertEquals("default", SslProviderConfigurator.resolveList("ENV", "", "default"));
+        assertEquals("default", SslProviderConfigurator.resolveList("ENV", "   ", "default"));
+    }
+
+    @Test
+    void resolveListFallsBackToDefaultWhenOverrideHasNoUsableEntries()
+    {
+        assertEquals("default", SslProviderConfigurator.resolveList("ENV", " , , ", "default"));
+    }
+
+    @Test
+    void resolveListTrimsDropsBlanksAndDedupesOverride()
+    {
+        assertEquals("A,B", SslProviderConfigurator.resolveList("ENV", " A , B ,A, ,B", "default"));
+    }
+
+    @Test
+    void resolveListReturnsDefaultUnchangedWhenOverrideMatches()
+    {
+        assertEquals("A,B", SslProviderConfigurator.resolveList("ENV", "A,B", "A,B"));
     }
 
     @Test
