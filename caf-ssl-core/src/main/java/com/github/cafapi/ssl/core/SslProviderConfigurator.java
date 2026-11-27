@@ -85,7 +85,7 @@ public final class SslProviderConfigurator
 
     /**
      * The environment variable that overrides the default approved TLS named groups (curves). Value is a
-     * comma-separated list of named group names, for example {@code X25519MLKEM768,X25519}.
+     * comma-separated list of named group names, for example {@code X25519MLKEM768,x25519}.
      */
     public static final String CAF_SSL_NAMED_GROUPS_ENV = "CAF_SSL_NAMED_GROUPS";
 
@@ -93,7 +93,7 @@ public final class SslProviderConfigurator
     public static final String APPROVED_TLS_NAMED_GROUPS = String.join(",",
             List.of(
                     PQC_NAMED_GROUP,
-                    "X25519",
+                    "x25519",
                     "secp256r1",
                     "secp384r1"
             ));
@@ -155,10 +155,10 @@ public final class SslProviderConfigurator
     }
 
     /**
-     * Resolves a comma-separated override list, falling back to {@code defaultValue} when the override is
-     * {@code null}, blank, or contains no usable entries. Blank entries are dropped and duplicates removed;
-     * an override that differs from the default is logged so it shows up in an audit trail, since it
-     * weakens or changes the hardened baseline. Pure function (no env access), so it can be unit tested.
+     * Resolves a comma-separated override list, falling back to {@code defaultValue} when the override is {@code null}, blank, or
+     * contains no usable entries. Blank entries are dropped and duplicates removed; an override that differs from the default is logged
+     * so it shows up in an audit trail, since it weakens or changes the hardened baseline. Pure function (no env access), so it can be
+     * unit tested.
      *
      * @param envName the environment variable name the override came from, used only for log messages
      * @param override the raw override value (may be {@code null})
@@ -172,10 +172,10 @@ public final class SslProviderConfigurator
         }
 
         final List<String> entries = Arrays.stream(override.split(","))
-                .map(String::trim)
-                .filter(entry -> !entry.isEmpty())
-                .distinct()
-                .toList();
+            .map(String::trim)
+            .filter(entry -> !entry.isEmpty())
+            .distinct()
+            .toList();
 
         if (entries.isEmpty()) {
             LOGGER.warn("caf-ssl: {} contained no usable entries; falling back to the approved default", envName);
@@ -184,7 +184,7 @@ public final class SslProviderConfigurator
 
         final String resolved = String.join(",", entries);
         if (!resolved.equals(defaultValue)) {
-            LOGGER.warn("caf-ssl: {} overrides the approved default ({} -> {})", envName, defaultValue, resolved);
+            LOGGER.info("caf-ssl: {} overrides the approved default ({} -> {})", envName, defaultValue, resolved);
         }
         return resolved;
     }

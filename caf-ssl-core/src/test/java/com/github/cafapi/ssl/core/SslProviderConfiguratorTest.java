@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.InputStream;
 import java.net.InetAddress;
@@ -118,12 +119,14 @@ final class SslProviderConfiguratorTest
     @Test
     void resolveApprovedCipherSuitesDefaultsWhenEnvUnset()
     {
+        assumeTrue(System.getenv(SslProviderConfigurator.CAF_SSL_CIPHER_SUITES_ENV) == null);
         assertEquals(SslProviderConfigurator.APPROVED_TLS_CIPHER_SUITES, SslProviderConfigurator.resolveApprovedCipherSuites());
     }
 
     @Test
     void resolveApprovedNamedGroupsDefaultsWhenEnvUnset()
     {
+        assumeTrue(System.getenv(SslProviderConfigurator.CAF_SSL_NAMED_GROUPS_ENV) == null);
         assertEquals(SslProviderConfigurator.APPROVED_TLS_NAMED_GROUPS, SslProviderConfigurator.resolveApprovedNamedGroups());
     }
 

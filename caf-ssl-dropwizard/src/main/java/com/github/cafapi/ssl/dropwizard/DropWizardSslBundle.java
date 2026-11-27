@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
 {
@@ -59,17 +58,8 @@ enum DropWizardSslBundle implements ConfiguredBundle<Configuration>
             return;
         }
 
-        final HttpsConnectorFactory httpsConnectorFactory = new HttpsConnectorFactory()
-        {
-            @Override
-            protected SslContextFactory.Server configureSslContextFactory(final SslContextFactory sslContextFactory)
-            {
-                final SslContextFactory.Server factory = super.configureSslContextFactory(sslContextFactory);
-                // Client chooses the cipher, as required by the intermediate TLS profile.
-                factory.setUseCipherSuitesOrder(false);
-                return factory;
-            }
-        };
+        final HttpsConnectorFactory httpsConnectorFactory = new CafHttpsConnectorFactory(
+            SslProviderConfigurator.resolveApprovedNamedGroups().split(","));
 
         httpsConnectorFactory.setPort(isNotNullOrEmpty(HTTPS_PORT) ? Integer.parseInt(HTTPS_PORT) : 8443);
         httpsConnectorFactory.setKeyStorePath(SSL_KEYSTORE_PATH + "/" + SSL_KEYSTORE);

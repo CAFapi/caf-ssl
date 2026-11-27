@@ -49,6 +49,7 @@ Finally, add the following environment variables:
 - `SSL_DISABLE_SNI_HOST_CHECK`: Optional. This property configures whether to disable the SNI host check. Defaults to **false**.
 - `HTTPS_PORT`: Optional. This property configures the port for the HTTPS server. Defaults to **8443**.
 - `SSL_JCE_PROVIDER_POLICY`: Optional. Controls TLS JCE provider selection strategy. See [SSL_JCE_PROVIDER_POLICY](#ssl_jce_provider_policy) below.
+- `CAF_SSL_CIPHER_SUITES`, `CAF_SSL_NAMED_GROUPS`: Optional. Override the approved TLS cipher suites and named groups. See [TLS settings](#tls-settings) below.
 
 ## caf-ssl-spring
 
@@ -71,23 +72,35 @@ Provider selection is controlled by the same environment variable as `caf-ssl-dr
 
 - `SSL_JCE_PROVIDER_POLICY`: Optional. Controls TLS JCE provider selection strategy. See [SSL_JCE_PROVIDER_POLICY](#ssl_jce_provider_policy) below.
 
-TLS ciphers: caf-ssl-spring sets approved suites by default, lets the client choose the cipher (server cipher
-order is disabled), and restricts curves to the approved named groups.
-
-You can also override the cipher suites at runtime:
-```powershell
-$env:CAF_SSL_CIPHER_SUITES="TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384"
-```
-
-Or override the named groups (curves):
-```powershell
-$env:CAF_SSL_NAMED_GROUPS="X25519MLKEM768,X25519"
-```
+The TLS protocols, cipher suites and named groups are set as described in [TLS settings](#tls-settings) below.
 
 ## caf-ssl-core
 
 This module holds the shared provider-selection and BouncyCastle registration logic used by both
 `caf-ssl-dropwizard` and `caf-ssl-spring`. Services do not depend on it directly.
+
+## TLS settings
+
+Both `caf-ssl-dropwizard` and `caf-ssl-spring` configure the service's HTTPS endpoint to follow the intermediate profile
+from [tlsref.org](https://docs.tlsref.org/server-side-tls.html):
+
+- **Protocols:** TLS 1.2 and TLS 1.3. `caf-ssl-dropwizard` sets this explicitly. `caf-ssl-spring` relies on the JVM,
+  which disables older protocols by default.
+- **Cipher suites:** `TLS_AES_128_GCM_SHA256`, `TLS_AES_256_GCM_SHA384` and `TLS_CHACHA20_POLY1305_SHA256` for TLS 1.3,
+  and the ECDHE-ECDSA and ECDHE-RSA suites with AES-128-GCM, AES-256-GCM or ChaCha20-Poly1305 for TLS 1.2.
+- **Named groups (curves):** `X25519MLKEM768`, `x25519`, `secp256r1` and `secp384r1`.
+- **Cipher preference:** the client chooses. Server cipher order is disabled.
+
+You can override the cipher suites and named groups with these environment variables. An override that differs from
+the approved default is logged as a warning.
+
+- `CAF_SSL_CIPHER_SUITES`: Optional. A comma-separated list of IANA cipher suite names, for example
+  `TLS_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256`. Don't use OpenSSL cipher strings such as
+  `HIGH:!aNULL`. `caf-ssl-dropwizard` matches each entry against the JVM's cipher suite names, so an OpenSSL string
+  enables no cipher suites and every TLS handshake fails.
+- `CAF_SSL_NAMED_GROUPS`: Optional. A comma-separated list of named groups, for example `X25519MLKEM768,x25519`. Use
+  the names exactly as shown above. `caf-ssl-spring` matches them case-sensitively and skips any it doesn't recognise,
+  so `X25519` doesn't enable `x25519`.
 
 ## SSL_JCE_PROVIDER_POLICY
 
